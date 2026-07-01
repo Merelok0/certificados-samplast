@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAMPLAST - Certificado de Calidad</title>
+  <link rel="stylesheet" href="css/certificado.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1f4e79">
+  <script src="config.js"></script>
+  <script src="js/cert-assets.js" defer></script>
+  <script src="js/html2pdf.bundle.min.js" defer></script>
+  <script src="js/app.js" defer></script>
+  <script src="js/auth.js" defer></script>
+  <script src="js/gemini-etiqueta.js" defer></script>
+</head>
+<body>
+
+  <div class="app">
+    <aside class="panel-form">
+
+      <h1>Certificado de Calidad</h1>
+      <p>Llena el formulario y genera el PDF. Usa 📷 para leer la etiqueta con IA automáticamente.</p>
+
+      <form id="cert-form">
+
+        <div class="field">
+          <label for="cliente">Cliente</label>
+          <input id="cliente" name="cliente" type="text" required placeholder="Ej. COMPAÑIA MOLINERA DEL CENTRO S.A.">
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="fecha_fabricacion">Fecha fabricación</label>
+            <input id="fecha_fabricacion" name="fecha_fabricacion" type="date" required>
+          </div>
+          <div class="field">
+            <label for="fecha_emision">Fecha emisión</label>
+            <input id="fecha_emision" name="fecha_emision" type="date">
+          </div>
+          <div class="field">
+            <label for="tipo">Tipo producto</label>
+            <select id="tipo" name="tipo">
+              <option value="MANUAL">Manual</option>
+              <option value="PRE-ESTIRADO">Pre-estirado</option>
+              <option value="AUTOMATICO">Automático</option>
+              <option value="MANUAL_COLOR">Manual con color</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field" id="color-field" hidden>
+          <label>Color del film</label>
+          <input type="hidden" id="color" name="color" value="">
+          <div class="color-switch" role="group" aria-label="Color del film">
+            <button class="color-btn" type="button" data-color="NEGRO">Negro</button>
+            <button class="color-btn" type="button" data-color="ROJO">Rojo</button>
+            <button class="color-btn" type="button" data-color="AZUL">Azul</button>
+            <button class="color-btn" type="button" data-color="VERDE">Verde</button>
+            <button class="color-btn" type="button" data-color="AMARILLO">Amarillo</button>
+          </div>
+          <span class="field-note" id="apariencia-preview"></span>
+        </div>
+
+        <div class="field">
+          <label for="formato_etiqueta">Formato etiqueta (ancho*espesor*peso)</label>
+          <input id="formato_etiqueta" name="formato_etiqueta" type="text" required placeholder="Ej. 18*20*2.0">
+          <span class="field-note">Ej. 18*20*2.0 → 18" ancho, 20 µm, 2.0 kg. Pre-estirado siempre usa 18" y en ancho muestra 420*.</span>
+        </div>
+
+        <div class="field">
+          <label>Nombre de producto generado</label>
+          <output id="producto-preview" class="producto-preview" for="formato_etiqueta tipo color"></output>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="ancho">Ancho (pulgadas)</label>
+            <input id="ancho" name="ancho" type="number" min="1" max="30" step="0.1" required>
+          </div>
+          <div class="field">
+            <label for="espesor">Espesor (µm)</label>
+            <input id="espesor" name="espesor" type="number" min="1" max="50" step="0.1" required>
+          </div>
+          <div class="field">
+            <label for="peso">Peso (kg)</label>
+            <input id="peso" name="peso" type="number" min="0.1" max="30" step="0.1" required>
+          </div>
+        </div>
+        <p class="field-note medidas-note">Medidas y valor medido del certificado se calculan desde estos datos (mm = pulgadas × 25,4).</p>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="codigo_lote">Código lote</label>
+            <input id="codigo_lote" name="codigo_lote" type="text" placeholder="Ej. R1-2DC">
+          </div>
+          <div class="field" style="grid-column: span 2;">
+            <label for="lote">Lote completo</label>
+            <input id="lote" name="lote" type="text" placeholder="Ej. 230626/R1-2DC">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="analista">Analista de calidad</label>
+          <input id="analista" name="analista" type="text" value="Dan Mergildo C.">
+        </div>
+
+        <!-- FOTO + BOTÓN IA -->
+        <div class="field">
+          <label for="foto-etiqueta">📷 Foto de etiqueta (para leer con IA)</label>
+          <input id="foto-etiqueta" name="foto-etiqueta" type="file" accept="image/*" capture="environment" style="margin-bottom:8px;">
+          <button class="btn" id="btn-leer-ia" type="button" disabled>
+            🔍 Leer etiqueta con IA (Gemini)
+          </button>
+          <div id="ia-status" class="field-note" role="status" aria-live="polite"></div>
+        </div>
+
+        <div class="field">
+          <label for="pdf-orientation">Orientación al exportar</label>
+          <select id="pdf-orientation" name="pdf_orientation">
+            <option value="portrait" selected>Vertical (predeterminado)</option>
+            <option value="landscape">Horizontal</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Nombre del PDF (como pestaña Excel)</label>
+          <output id="pdf-name-preview" class="pdf-name-preview" for="cliente fecha_fabricacion tipo formato_etiqueta color"></output>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-secondary" id="btn-ejemplo" type="button">Cargar ejemplo INSUPACK (18*20*2.0)</button>
+          <button class="btn btn-secondary" id="btn-ejemplo-pre" type="button">Ejemplo pre-estirado (18*09*2.5)</button>
+          <button class="btn btn-secondary" id="btn-ejemplo-auto" type="button">Ejemplo automático (20*17*12.0)</button>
+          <button class="btn btn-secondary" id="btn-ejemplo-color" type="button">Ejemplo color negro (20*20*2.2)</button>
+          <button class="btn btn-primary" id="btn-pdf" type="button">Guardar PDF…</button>
+          <button class="btn btn-secondary" id="btn-print" type="button">Imprimir</button>
+          <p class="field-note pdf-export-status" id="pdf-export-status" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+
+      <p class="hint">
+        El formato etiqueta arma el nombre STRETCH FILM, las celdas MEDIDAS/VALOR MEDIDO y el texto de apariencia si hay color.
+        La fecha de emisión se completa con +1 día si la dejas vacía.
+        Use <strong>ABRIR_CERTIFICADO.bat</strong> y luego <strong>Guardar PDF…</strong> para elegir carpeta y nombre (como pestaña Excel).
+      </p>
+    </aside>
+
+    <main class="panel-preview">
+      <div class="preview-toolbar">
+        <h2>Vista previa del certificado</h2>
+        <span class="preview-note">Réplica del área de impresión Excel A1:J43. La conversión a la derecha no imprime.</span>
+      </div>
+      <div class="preview-layout">
+        <div id="cert-preview"></div>
+        <aside id="preview-helper" class="preview-helper" aria-label="Referencia de conversión"></aside>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,198 @@
+================================================================
+SAMPLAST - CERTIFICADOS DE CALIDAD
+GUÍA DE INSTALACIÓN Y CONFIGURACIÓN
+================================================================
+Versión 2.0 - Gmail + Gemini IA + Soporte Móvil (PWA)
+================================================================
+
+
+REQUISITOS PREVIOS
+------------------
+- Python 3.10 o superior instalado (con "Add Python to PATH" activado)
+  Descarga: https://www.python.org/downloads/
+- Conexión a internet para el primer arranque (instalar librerías y login)
+- Cuenta de Gmail para acceder al sistema
+
+
+================================================================
+PASO 1 — CONFIGURAR GOOGLE CLOUD CONSOLE (Client ID OAuth)
+================================================================
+
+Este paso permite el inicio de sesión con Gmail.
+
+1. Ingrese a: https://console.cloud.google.com/
+2. Cree un proyecto nuevo (ej: "SAMPLAST-Certs") o use uno existente.
+3. En el menú izquierdo: "APIs y servicios" → "Credenciales"
+4. Haga clic en "+ CREAR CREDENCIALES" → "ID de cliente OAuth 2.0"
+5. Si se lo pide, configure la pantalla de consentimiento:
+   - Tipo de usuario: "Externo"
+   - Nombre de la aplicación: SAMPLAST Certificados
+   - Correo de asistencia: su email
+   - Guarde y continue (los campos opcionales pueden quedar vacíos)
+6. Vuelva a Credenciales → "+ CREAR CREDENCIALES" → "ID de cliente OAuth 2.0"
+7. Tipo de aplicación: "Aplicación web"
+8. Nombre: "SAMPLAST Local"
+9. En "Orígenes de JavaScript autorizados" agregue:
+     http://localhost:8765
+     http://127.0.0.1:8765
+10. En "URIs de redirección autorizados" deje vacío (no es necesario).
+11. Haga clic en "CREAR".
+12. Copie el "ID de cliente" (termina en .apps.googleusercontent.com)
+    → Lo necesitará en el Paso 3.
+
+
+================================================================
+PASO 2 — OBTENER API KEY DE GEMINI
+================================================================
+
+Este paso permite que la IA lea e interprete las fotos de etiquetas.
+
+1. Ingrese a: https://aistudio.google.com/app/apikey
+   (o busque "Google AI Studio API Key")
+2. Inicie sesión con su cuenta de Google.
+3. Haga clic en "Create API Key" (Crear clave de API).
+4. Seleccione el proyecto de Google Cloud creado en el Paso 1.
+5. Copie la clave generada (empieza con AIzaSy...)
+   → La necesitará en el Paso 3.
+
+NOTA: La API Key de Gemini tiene una capa gratuita generosa.
+Para uso de SAMPLAST (imágenes de etiquetas), es suficiente sin costo.
+
+
+================================================================
+PASO 3 — CREAR ARCHIVO .env DE CONFIGURACIÓN
+================================================================
+
+1. En la carpeta de trabajo, encontrará el archivo ".env.example"
+2. Cópielo y renómbrelo a ".env" (sin extensión ".example")
+3. Ábra ".env" con el Bloc de Notas
+4. Reemplace los valores:
+
+   GOOGLE_CLIENT_ID=PEGUE_AQUÍ_SU_CLIENT_ID.apps.googleusercontent.com
+   GEMINI_API_KEY=PEGUE_AQUÍ_SU_API_KEY
+
+5. Guarde el archivo.
+
+IMPORTANTE: El archivo ".env" contiene credenciales privadas.
+No lo comparta ni lo suba a internet.
+
+
+================================================================
+PASO 4 — PRIMER ARRANQUE
+================================================================
+
+1. Doble clic en "ABRIR_CERTIFICADO.bat"
+2. La primera vez se instalarán las librerías de Python automáticamente
+   (puede tardar 1-2 minutos en la primera ejecución)
+3. Se abrirá Chrome o Edge con la pantalla de inicio de sesión
+4. Haga clic en el botón de Google e ingrese con su cuenta Gmail
+5. ¡Listo! Ya puede generar certificados y usar el lector de etiquetas IA
+
+
+================================================================
+PASO 5 — USAR DESDE EL CELULAR (PWA + ngrok)
+================================================================
+
+Para usar la app en su celular con la cámara integrada:
+
+OPCIÓN A: Red WiFi local (la más simple)
+-----------------------------------------
+1. Asegúrese de que su celular y la computadora estén en la misma red WiFi
+2. Averigüe la dirección IP local de la computadora:
+   - Abra cmd y escriba: ipconfig
+   - Busque la línea "Dirección IPv4" (ej: 192.168.1.100)
+3. En el celular abra Chrome y vaya a: http://192.168.1.100:8765
+   NOTA: El login de Google y la cámara requieren HTTPS.
+   Use ngrok (Opción B) para activar HTTPS de forma segura.
+
+OPCIÓN B: ngrok — HTTPS gratuito y seguro (recomendado)
+---------------------------------------------------------
+1. Cree cuenta gratuita en: https://ngrok.com/
+2. Descargue ngrok para Windows y descomprimalo en cualquier carpeta
+3. Ábrauna ventana de cmd y vaya a la carpeta donde descomprimió ngrok
+4. Ejecute: ngrok config add-authtoken TU_TOKEN_DE_NGROK
+   (el token lo encontrará en el panel de ngrok.com tras registrarse)
+5. Con el servidor de SAMPLAST ya corriendo, ejecute:
+     ngrok http 8765
+6. ngrok mostrará una URL del tipo:
+     https://abcd1234.ngrok-free.app
+7. Abra esa URL en el celular → el login y la cámara funcionarán.
+8. Agregue también esa URL en Google Cloud Console →
+   "Orígenes de JavaScript autorizados" para que el login funcione.
+
+INSTALAR COMO APP EN EL CELULAR (PWA):
+- En Chrome Android: menú (⋮) → "Agregar a pantalla de inicio"
+- En Safari iOS: botón compartir → "Agregar a pantalla de inicio"
+- La app se abrirá en pantalla completa como una app nativa.
+
+
+================================================================
+CÓMO USAR EL LECTOR DE ETIQUETAS IA
+================================================================
+
+1. Inicie sesión con su cuenta Gmail
+2. En el formulario, localice el campo "📷 Foto de etiqueta de lote"
+3. Toque el campo para:
+   - En COMPUTADORA: Seleccionar un archivo de imagen (JPG, PNG)
+   - En CELULAR: Se abrirá la cámara para tomar la foto directamente
+4. Tome la foto de la etiqueta STFM asegurándose de que sean legibles:
+   - La línea STFM XX"
+   - El CODIGO completo
+   - El LOTE completo
+5. Toque el botón "🔍 Leer etiqueta con IA (Gemini)"
+6. Espere 5-10 segundos mientras Gemini procesa la imagen
+7. Los campos del formulario se llenarán automáticamente:
+   - Formato, Ancho, Espesor, Peso
+   - Código de lote y Lote completo
+   - Fecha de fabricación
+8. SOLO complete el campo "Cliente" manualmente
+9. Revise la vista previa y toque "Guardar PDF"
+
+COLORES DE ESTADO IA:
+  🟢 Verde = Lectura correcta con alta confianza
+  🟡 Amarillo = Confianza media, revise los campos resaltados
+  🔴 Rojo = No se pudo leer la etiqueta (imagen borrosa o no es etiqueta)
+
+
+================================================================
+SOLUCIÓN DE PROBLEMAS FRECUENTES
+================================================================
+
+Problema: "El servidor no arranca"
+Solución: Verifique que Python esté instalado y en el PATH.
+          Ejecute en cmd: python --version
+
+Problema: "Error de login de Google"
+Solución: - Verifique que el GOOGLE_CLIENT_ID en .env sea correcto.
+          - Verifique que la URL http://127.0.0.1:8765 esté en los
+            orígenes autorizados de su credencial en Google Cloud.
+
+Problema: "Error en la lectura de etiqueta con IA"
+Solución: - Verifique que la GEMINI_API_KEY en .env sea correcta.
+          - La imagen debe mostrar claramente el CODIGO y el LOTE.
+          - Evite fotos borrosas o con poca iluminación.
+
+Problema: "No puedo guardar el PDF"
+Solución: Use el servidor Flask (ABRIR_CERTIFICADO.bat), no abra
+          index.html directamente desde el explorador de archivos.
+
+================================================================
+ARCHIVOS DEL SISTEMA
+================================================================
+
+  index.html            → Interfaz principal
+  js/app.js             → Lógica del certificado
+  js/auth.js            → Inicio de sesión Gmail
+  js/gemini-etiqueta.js → Lector IA de etiquetas
+  js/cert-assets.js     → Logos e imágenes (base64)
+  css/certificado.css   → Estilos completos
+  server.py             → Servidor Flask + Gemini API proxy
+  requirements.txt      → Dependencias de Python
+  .env                  → Sus credenciales (NO COMPARTIR)
+  .env.example          → Plantilla del archivo .env
+  manifest.json         → Configuración PWA para celular
+  service-worker.js     → Soporte de instalación PWA
+
+================================================================
+FIN DE LA GUÍA
+================================================================

@@ -1,0 +1,16 @@
+{
+  "short_name": "SAMPLAST Certs",
+  "name": "SAMPLAST Certificados de Calidad",
+  "icons": [
+    {
+      "src": "assets/logo.jpeg",
+      "type": "image/jpeg",
+      "sizes": "192x192"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#1f4e79",
+  "theme_color": "#1f4e79",
+  "display": "standalone",
+  "orientation": "portrait"
+}

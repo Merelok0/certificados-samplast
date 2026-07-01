@@ -1,0 +1,240 @@
+================================================================================
+PROMPT PARA GOOGLE ANTIGRAVITY — SAMPLAST Certificado Web + Gmail + Gemini
+================================================================================
+Copia y pega TODO este texto en Antigravity para continuar el proyecto.
+================================================================================
+
+
+CONTEXTO DEL PROYECTO
+---------------------
+SAMPLAST S.A.C. quiere reemplazar un Excel pesado (~1987 hojas) de certificados
+de calidad por una aplicación web local. La app YA FUNCIONA para:
+  - Llenar formulario y generar certificado PDF (réplica del Excel)
+  - Formato etiqueta ancho*espesor*peso (ej. 18*20*2.0)
+  - Tipos: MANUAL, PRE-ESTIRADO, AUTOMATICO, MANUAL_COLOR
+  - Exportar PDF con nombre como pestaña Excel (ej. 23-06-26 INSUPACK 18X20X2.0 M.pdf)
+  - Imágenes embebidas (logo, sello, firma) en js/cert-assets.js
+
+LO QUE FALTA (tu tarea principal):
+  1. Al abrir la app, pedir INICIO DE SESIÓN con cuenta Gmail (Google OAuth).
+  2. Conectar automáticamente con Gemini usando la sesión/credenciales de Google.
+  3. Botón "Leer etiqueta con IA": el usuario sube o toma foto de la etiqueta
+     de lote → Gemini lee la imagen → llena automáticamente el formulario.
+  4. El CLIENTE sigue siendo manual (no viene en la etiqueta).
+
+
+================================================================================
+RUTAS IMPORTANTES — TRABAJA SOLO EN ESTA CARPETA
+================================================================================
+
+CARPETA DE TRABAJO (donde debes modificar archivos):
+  C:\Users\CALIDAD_SAMPLAST\Documents\01-Certfiicados de Calidad 2026\certificado-web_TRABAJO_2026-06-27
+
+COPIA DE SEGURIDAD (NO modificar, solo referencia):
+  C:\Users\CALIDAD_SAMPLAST\Documents\01-Certfiicados de Calidad 2026\certificado-web_COPIA_SEGURIDAD_2026-06-28
+
+CARPETA PADRE (Excel y datos de referencia):
+  C:\Users\CALIDAD_SAMPLAST\Documents\01-Certfiicados de Calidad 2026
+
+ARCHIVOS CLAVE EN LA CARPETA DE TRABAJO:
+  index.html              → UI principal (formulario + vista previa certificado)
+  js/app.js               → Toda la lógica del certificado (~1000 líneas)
+  js/cert-assets.js       → Logo, sello, firma en base64 (NO romper)
+  js/html2pdf.bundle.min.js → Export PDF (NO romper)
+  css/certificado.css     → Estilos del certificado
+  ABRIR_CERTIFICADO.bat   → Abre http://127.0.0.1:8765/ con python -m http.server
+  Etiqueta.JPG            → Foto real de etiqueta de ejemplo
+  PROMPT_LECTURA_ETIQUETA_GEMINI.txt → Reglas COMPLETAS para que Gemini decodifique etiquetas (versión 3, USAR ESTE TEXTO como system prompt de Gemini)
+
+EXCEL DE REFERENCIA (solo lectura, no modificar sin pedir):
+  C:\Users\CALIDAD_SAMPLAST\Documents\01-Certfiicados de Calidad 2026\REGISTRO_CERTIFICADOS_WEB_2026.xlsx
+  Hojas: CODIGOS_MICRAS, ETIQUETAS_REFERENCIA, INSTRUCCIONES_IA
+
+EXCEL ORIGEN (muy pesado, no abrir en la app):
+  C:\Users\CALIDAD_SAMPLAST\Documents\01-Certfiicados de Calidad 2026\1. REGISTRO DE CERTIFICADOS DE CALIDAD  2026.xlsx
+
+
+================================================================================
+CÓMO ABRIR LA APP HOY
+================================================================================
+
+  1. Doble clic en ABRIR_CERTIFICADO.bat
+  2. Se abre Chrome/Edge en http://127.0.0.1:8765/
+  3. Servidor: python -m http.server 8765
+
+Después de tu cambio, la app debe seguir abriéndose así, pero primero mostrar
+pantalla de login Gmail si no hay sesión.
+
+
+================================================================================
+ESTADO ACTUAL DEL BOTÓN FOTO ETIQUETA (lo que debes mejorar)
+================================================================================
+
+En index.html existe:
+  <input id="foto-etiqueta" type="file" accept="image/*">
+
+En app.js:
+  - labelInput solo guarda la imagen en memoria (labelObjectUrl)
+  - labelHtml() existe pero NO se usa en el certificado impreso
+  - NO hay llamada a Gemini ni llenado automático del formulario
+
+DEBES:
+  - Mantener el input de foto (cámara o archivo)
+  - Agregar botón "Leer etiqueta con IA" que envíe la imagen a Gemini
+  - Con la respuesta JSON, llenar estos campos del formulario:
+      formato_etiqueta, ancho, espesor, peso, codigo_lote, lote,
+      fecha_fabricacion, tipo (default MANUAL)
+  - NO llenar cliente (siempre manual)
+  - Mostrar mensaje si confianza es baja o si no es etiqueta de lote
+
+
+================================================================================
+REGLAS DE DECODIFICACIÓN DE ETIQUETAS (resumen — detalle en PROMPT_LECTURA...)
+================================================================================
+
+Etiqueta típica (3 líneas):
+  STFM 18"
+  CODIGO:1812C020TD
+  LOTE:240425/R1-2IS
+
+Patrón CODIGO confirmado (MANUAL):
+  AA + BB + C + PPP + TD
+  AA  = pulgadas (18, 20)
+  BB  = código espesor 01-22 (NO micras directas: 12 = 20 µm, 04 = 12 µm)
+  C   = letra constante en muestras MANUAL
+  PPP = peso × 10 (020 = 2.0 kg, 015 = 1.5 kg)
+  TD  = sufijo producto MANUAL
+
+Resultado certificado: formato_etiqueta = "18*20*2.0"
+
+LOTE: DDMMYY/CODIGO_LOTE → fecha_fabricacion = DD/MM/20YY
+
+Ejemplos confirmados (para probar):
+  1812C020TD + 240425/R1-2IS  → 18*20*2.0
+  2004C015TD + 250626/R1-2DC  → 20*12*1.5  (MENDOZA)
+  2012C025TD + 230626/R1-2DC  → 20*20*2.5
+  2010C030TD + 230626/R1-2DC  → 20*18*3.0
+
+Gemini debe devolver JSON según esquema en PROMPT_LECTURA_ETIQUETA_GEMINI.txt
+
+
+================================================================================
+AUTENTICACIÓN GMAIL + GEMINI — QUÉ IMPLEMENTAR
+================================================================================
+
+OBJETIVO UX:
+  - Usuario abre la app → si no está logueado, pantalla "Iniciar sesión con Google"
+  - Tras login Gmail, la app queda lista para usar Gemini sin pegar API keys
+  - Mostrar email del usuario logueado y botón "Cerrar sesión"
+
+OPCIONES TÉCNICAS (elige la más viable en Antigravity / Google Cloud):
+
+  Opción A — Google Identity Services (OAuth 2.0) en frontend + backend proxy:
+    - Frontend: Google Sign-In (Gmail)
+    - Backend local (Python Flask/FastAPI) que recibe imagen + token de usuario
+    - Backend llama Gemini API con API key del proyecto O con OAuth del usuario
+    - La API key de Gemini NUNCA en el frontend (js visible)
+
+  Opción B — Firebase Auth (Google) + Cloud Function / backend local:
+    - Similar flujo, token Firebase verificado en servidor
+
+  Opción C — Si Antigravity integra Gemini nativo con cuenta Google:
+    - Usar el conector directo de Google, pero igual proteger la llamada
+
+REQUISITOS DE SEGURIDAD:
+  - NO poner API key de Gemini en index.html ni app.js
+  - Servir la app por localhost (ABRIR_CERTIFICADO.bat)
+  - Crear archivo .env o config.local.json para API key (gitignore si hay repo)
+  - Documentar en LEEME.txt cómo el usuario configura su proyecto Google Cloud
+
+SCOPES SUGERIDOS OAuth:
+  - email, profile (login)
+  - Si hace falta acceso explícito a Gemini: seguir documentación Google AI / Vertex
+
+ENDPOINT SUGERIDO (backend Python en la misma carpeta):
+  POST /api/leer-etiqueta
+  Body: multipart imagen + (opcional) session token
+  Response: JSON igual al esquema de PROMPT_LECTURA_ETIQUETA_GEMINI.txt
+
+Actualizar ABRIR_CERTIFICADO.bat para iniciar:
+  - servidor estático (puerto 8765) Y backend API (puerto 8766), o un solo servidor
+
+
+================================================================================
+LO QUE NO DEBES ROMPER
+================================================================================
+
+  ✗ No cambiar el layout del certificado (tabla A1:J43, MEDIDAS/TOLERANCIAS)
+  ✗ No quitar js/cert-assets.js ni romper export PDF (html2pdf)
+  ✗ No cambiar lógica de nombre PDF (pestaña Excel)
+  ✗ No cambiar MICRON_GAUGE ni parseFormatoEtiqueta sin necesidad
+  ✗ No mover la carpeta de trabajo a otra ruta
+  ✗ No requerir internet para generar PDF (solo para login y Gemini)
+
+
+================================================================================
+ARCHIVOS QUE PUEDES CREAR
+================================================================================
+
+  server.py o app_server.py     → Backend Flask/FastAPI + Gemini
+  .env.example                  → Plantilla API_KEY y GOOGLE_CLIENT_ID
+  config.example.json
+  js/auth.js                    → Login Google
+  js/gemini-etiqueta.js         → Cliente que llama /api/leer-etiqueta
+  LEEME_INSTALACION.txt         → Pasos para Google Cloud Console + primera vez
+  requirements.txt              → google-generativeai, flask, etc.
+
+Modificar con cuidado:
+  index.html  → pantalla login + botón leer etiqueta + estado IA
+  app.js      → función applyEtiquetaGemini(json) que llena el form
+  ABRIR_CERTIFICADO.bat → levantar backend + frontend
+
+
+================================================================================
+FLUJO DE USUARIO DESEADO (CHECKLIST)
+================================================================================
+
+  [ ] 1. Usuario ejecuta ABRIR_CERTIFICADO.bat
+  [ ] 2. App pide login Gmail (si no hay sesión)
+  [ ] 3. Tras login, ve formulario de certificado (como ahora)
+  [ ] 4. Usuario elige foto de etiqueta (archivo o cámara)
+  [ ] 5. Clic "Leer etiqueta con IA"
+  [ ] 6. Spinner / "Analizando..."
+  [ ] 7. Gemini devuelve JSON → campos se llenan solos
+  [ ] 8. Usuario escribe CLIENTE manualmente
+  [ ] 9. Revisa vista previa y guarda PDF como siempre
+
+
+================================================================================
+PRUEBAS MÍNIMAS QUE DEBES PASAR
+================================================================================
+
+  1. Login Gmail funciona y persiste sesión en la sesión del navegador
+  2. Etiqueta.JPG → decodifica 18*20*2.0, lote 240425/R1-2IS
+  3. Imagen tipo logo SAMPLAST → error no_es_etiqueta_lote (no llenar form)
+  4. Export PDF sigue funcionando después de llenar con IA
+  5. Ejemplo INSUPACK manual sigue funcionando sin IA
+
+
+================================================================================
+INSTRUCCIÓN FINAL PARA ANTIGRAVITY
+================================================================================
+
+Trabaja en la carpeta:
+  C:\Users\CALIDAD_SAMPLAST\Documents\01-Certfiicados de Calidad 2026\certificado-web_TRABAJO_2026-06-27
+
+Lee primero estos archivos antes de codificar:
+  - index.html
+  - js/app.js
+  - PROMPT_LECTURA_ETIQUETA_GEMINI.txt  (contenido exacto para Gemini)
+
+Implementa login Gmail + lectura de etiqueta con Gemini + autollenado del
+formulario. Mantén todo lo demás funcionando. Entrega LEEME_INSTALACION.txt
+con los pasos para configurar Google Cloud (OAuth client ID + Gemini API).
+
+Si necesitas el prompt completo de decodificación de etiquetas, está en:
+  PROMPT_LECTURA_ETIQUETA_GEMINI.txt (misma carpeta)
+
+================================================================================
+FIN DEL PROMPT — ANTIGRAVITY
+================================================================================
