@@ -557,7 +557,8 @@ function autoFillDates() {
 
 function autoFillLote() {
   if (form.lote.dataset.manual === "1") return;
-  form.lote.value = suggestLote(form.fecha_fabricacion.value, form.codigo_lote.value);
+  const codLote = form.codigo_lote ? form.codigo_lote.value : "";
+  form.lote.value = suggestLote(form.fecha_fabricacion.value, codLote);
 }
 
 function loadExampleBase({
@@ -576,7 +577,9 @@ function loadExampleBase({
   form.tipo.value = tipo;
   setColor(color || "");
   form.formato_etiqueta.value = formato;
-  form.codigo_lote.value = codigoLote;
+  if (form.codigo_lote) {
+    form.codigo_lote.value = codigoLote;
+  }
   form.lote.value = lote;
   form.lote.dataset.manual = "1";
   form.analista.value = "Dan Mergildo C.";
