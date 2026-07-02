@@ -34,7 +34,7 @@ const RESISTENCIA =
 
 const PRE_ESTIRADO_ANCHO_PULG = "18";
 const PRE_ESTIRADO_MEDIDAS_ANCHO = "420*";
-const PRE_ESTIRADO_VALOR_ANCHO = "421";
+const PRE_ESTIRADO_VALOR_ANCHO = "420";
 
 const form = document.getElementById("cert-form");
 const preview = document.getElementById("cert-preview");
