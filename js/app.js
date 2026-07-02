@@ -550,7 +550,7 @@ function applyTipoRules() {
 
 function autoFillDates() {
   const fab = form.fecha_fabricacion.value;
-  if (fab) {
+  if (fab && !form.fecha_emision.dataset.manual) {
     form.fecha_emision.value = addDays(fab, 1);
   }
 }
@@ -573,6 +573,7 @@ function loadExampleBase({
   form.cliente.value = cliente;
   form.fecha_fabricacion.value = fechaFab;
   form.fecha_emision.value = fechaEmision;
+  form.fecha_emision.dataset.manual = "1";
   form.tipo.value = tipo;
   setColor(color || "");
   form.formato_etiqueta.value = formato;
@@ -826,7 +827,6 @@ function getPdfRenderOptions(orientation, scale = 2) {
       logging: false,
       useCORS: false,
       allowTaint: false,
-      windowWidth: 1024 // Forzar ancho de pantalla para evitar recorte en móviles
     },
     jsPDF: {
       unit: "mm",
@@ -989,6 +989,7 @@ function printCertificate() {
 }
 
 form.addEventListener("input", (event) => {
+  if (event.target.name === "fecha_emision") form.fecha_emision.dataset.manual = "1";
   if (event.target.name === "lote") form.lote.dataset.manual = event.target.value ? "1" : "";
   if (event.target.name === "fecha_fabricacion" || event.target.name === "codigo_lote") {
     autoFillDates();
