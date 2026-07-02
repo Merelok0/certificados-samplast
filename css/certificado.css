@@ -108,6 +108,17 @@ body.pdf-capture-mode .cert-sheet .cell-med {
   box-sizing: border-box !important;
 }
 
+/* Forzar ancho A4 real durante captura para PDF correcto en celulares */
+body.pdf-capture-mode .cert-page {
+  width: 210mm !important;
+  min-width: 210mm !important;
+  overflow: visible !important;
+}
+
+body.pdf-capture-mode .app {
+  grid-template-columns: 0 1fr !important;
+}
+
 .color-switch {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
