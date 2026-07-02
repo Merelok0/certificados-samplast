@@ -75,7 +75,7 @@ body {
 }
 
 body.pdf-capture-mode .panel-form {
-  visibility: hidden;
+  display: none !important;
 }
 
 body.pdf-capture-mode .panel-preview {
@@ -85,7 +85,7 @@ body.pdf-capture-mode .panel-preview {
 
 body.pdf-capture-mode .preview-toolbar,
 body.pdf-capture-mode #preview-helper {
-  visibility: hidden;
+  display: none !important;
 }
 
 body.pdf-capture-mode .cert-sheet .thead,
