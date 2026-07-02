@@ -155,10 +155,32 @@ document.addEventListener('DOMContentLoaded', () => {
     if (d.codigo_lote) certForm.codigo_lote.value = d.codigo_lote;
     if (d.lote) { certForm.lote.value = d.lote; certForm.lote.dataset.manual = '1'; }
     if (d.fecha_fabricacion) certForm.fecha_fabricacion.value = d.fecha_fabricacion;
+
+    // Intentar auto-detectar cliente usando el código de lote (ej: R1-2DC -> DC -> CLIENTE_CORTO)
+    let detectado = false;
+    if (d.codigo_lote && typeof CLIENTES_DB !== 'undefined') {
+      // Extraer letras finales del código de lote (ej: R1-2DC -> DC, R7-1CP -> CP)
+      const match = d.codigo_lote.match(/[A-Za-z]+$/);
+      if (match) {
+        const cortoLote = match[0].toUpperCase();
+        // Buscar en la base de datos de clientes un "corto" que coincida
+        const found = CLIENTES_DB.find(c => c.corto === cortoLote);
+        if (found) {
+          certForm.cliente.value = found.cliente;
+          detectado = true;
+        }
+      }
+    }
+
     if (typeof window.applyTipoRules === 'function') window.applyTipoRules();
     if (typeof window.applyFormatoToFields === 'function') window.applyFormatoToFields();
     if (typeof window.autoFillDates === 'function') window.autoFillDates();
     if (typeof window.updatePreview === 'function') window.updatePreview();
+
+    // Si se auto-detectó el cliente, actualizar vista previa para reflejarlo
+    if (detectado && typeof window.updatePreview === 'function') {
+      window.updatePreview();
+    }
   }
 
   function resaltarCampos(confianza) {
