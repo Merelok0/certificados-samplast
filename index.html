@@ -4,34 +4,34 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SAMPLAST - Certificado de Calidad</title>
-  <link rel="stylesheet" href="css/certificado.css">
-  <link rel="stylesheet" href="css/lote-masivo.css">
-  <link rel="stylesheet" href="css/clientes-admin.css">
+  <link rel="stylesheet" href="css/certificado.css?v=final-20260908-2">
+  <link rel="stylesheet" href="css/lote-masivo.css?v=final-20260908-2">
+  <link rel="stylesheet" href="css/clientes-admin.css?v=final-20260908-2">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1f4e79">
-  <script src="js/cert-assets.js" defer></script>
-  <script src="js/html2pdf.bundle.min.js" defer></script>
-  <script src="js/app.js" defer></script>
-  <script src="js/clientes-admin.js" defer></script>
-  <script src="js/lote-masivo.js" defer></script>
+  <script src="js/cert-assets.js?v=final-20260908-2" defer></script>
+  <script src="js/html2pdf.bundle.min.js?v=final-20260908-2" defer></script>
+  <script src="js/app.js?v=final-20260908-2" defer></script>
+  <script src="js/clientes-admin.js?v=final-20260908-2" defer></script>
+  <script src="js/lote-masivo.js?v=final-20260908-2" defer></script>
 </head>
 <body>
 
   <div class="app">
     <aside class="panel-form">
 
-      <h1>Certificados de Calidad</h1>
-      <p>Genera un certificado individual o carga varios lotes de una sola vez.</p>
+      <h1>Certificado de Calidad</h1>
+      <p>Complete los datos para generar uno o varios certificados.</p>
 
       <section class="bulk-panel" aria-labelledby="bulk-title">
         <div class="bulk-title-row">
-          <h2 id="bulk-title">Lote masivo</h2>
+          <h2 id="bulk-title">Carga masiva</h2>
         </div>
         <p class="bulk-help">
-          Pega el JSON generado por la IA o una línea por certificado con <strong>CLIENTE | CODIGO | LOTE</strong>.
-          La web decodifica ancho, micras, peso y fechas automáticamente.
+          Pegue el JSON generado por la IA o una línea por certificado con <strong>CLIENTE | CODIGO | LOTE</strong>.
+          El sistema completa automáticamente las características del producto y las fechas.
         </p>
-        <textarea id="bulk-input" rows="6" spellcheck="false" placeholder='[{"cliente":"PRODUCTORA DE ALIMENTOS","codigo":"2010C030TD","lote":"290826/R1-1DC"},{"cliente":"INDUSTRIAS QUIMICA MENDOZA","codigo":"2004C015TD","lote":"070926/R1-2IS"}]'></textarea>
+        <textarea id="bulk-input" rows="5" spellcheck="false" placeholder='[{"cliente":"PRODUCTORA DE ALIMENTOS","codigo":"2010C030TD","lote":"290826/R1-1DC"},{"cliente":"INDUSTRIAS QUIMICA MENDOZA","codigo":"2004C015TD","lote":"070926/R1-2IS"}]'></textarea>
         <div class="bulk-actions">
           <button class="btn btn-primary" id="btn-bulk-load" type="button">Cargar y revisar</button>
           <button class="btn btn-secondary" id="btn-bulk-print" type="button" disabled>Imprimir todos</button>
@@ -39,23 +39,22 @@
         </div>
         <div id="bulk-status" class="bulk-status" role="status" aria-live="polite"></div>
         <div id="bulk-table-container" class="bulk-table-wrap" hidden></div>
-        <p class="bulk-tip">El JSON es el formato recomendado porque reduce errores al copiar varios certificados.</p>
       </section>
 
-      <section class="assistant-tools" aria-label="Herramientas para IA y clientes">
+      <section class="assistant-tools" aria-label="Herramientas auxiliares">
         <details class="tool-panel">
-          <summary>Prompt para transcribir capturas con IA</summary>
+          <summary>Instructivo para transcripción con IA</summary>
           <div class="tool-panel-content">
             <p class="tool-help">
-              Adjunta las capturas de WhatsApp a ChatGPT, Gemini u otra IA y pega este prompt. La respuesta quedará lista para pegar arriba en <strong>Lote masivo</strong>.
+              Adjunte las capturas de WhatsApp a la IA y copie este instructivo. La respuesta quedará lista para pegar en Carga masiva.
             </p>
             <div class="prompt-meta">
-              <span>Formato de salida: JSON</span>
+              <span>Salida: JSON</span>
               <span>Clientes incluidos: <strong id="ia-prompt-client-count">0</strong></span>
             </div>
-            <textarea id="ia-prompt-text" readonly spellcheck="false" aria-label="Prompt completo para la IA"></textarea>
+            <textarea id="ia-prompt-text" readonly spellcheck="false" aria-label="Instructivo completo para la IA"></textarea>
             <div class="tool-actions">
-              <button class="btn btn-primary" id="btn-copy-ia-prompt" type="button">Copiar prompt completo</button>
+              <button class="btn btn-primary" id="btn-copy-ia-prompt" type="button">Copiar instructivo completo</button>
             </div>
             <div id="copy-prompt-status" class="tool-status" role="status" aria-live="polite"></div>
           </div>
@@ -65,7 +64,7 @@
           <summary>Administrar clientes</summary>
           <div class="tool-panel-content">
             <p class="tool-help">
-              Añade un cliente nuevo una sola vez. Aparecerá inmediatamente en el autocompletado y también dentro del prompt para la IA.
+              Añada un cliente para incorporarlo al autocompletado y al instructivo de transcripción.
             </p>
             <div class="client-add-grid">
               <input id="nuevo-cliente-nombre" type="text" placeholder="Nombre oficial / razón social" autocomplete="off">
@@ -75,16 +74,14 @@
               <button class="btn btn-primary" id="btn-add-client" type="button">Añadir cliente</button>
             </div>
             <div id="clientes-status" class="tool-status" role="status" aria-live="polite"></div>
-            <div class="clients-summary">Base disponible: <strong id="clientes-total">0</strong> clientes en total.</div>
+            <div class="clients-summary">Clientes disponibles: <strong id="clientes-total">0</strong></div>
             <div id="clientes-personalizados-list" class="clientes-custom-list"></div>
-            <p class="local-storage-note">
-              Los clientes añadidos desde esta sección se guardan en este navegador. No necesitas editar el código para seguir usándolos aquí.
-            </p>
+            <p class="local-storage-note">Los clientes añadidos desde esta sección se conservan en este navegador.</p>
           </div>
         </details>
       </section>
 
-      <div class="mode-divider"><span>Modo individual</span></div>
+      <div class="mode-divider"><span>Certificado individual</span></div>
 
       <form id="cert-form">
 
@@ -177,7 +174,7 @@
         </div>
 
         <div class="field">
-          <label>Nombre del PDF (como pestaña Excel)</label>
+          <label>Nombre del PDF</label>
           <output id="pdf-name-preview" class="pdf-name-preview" for="cliente fecha_fabricacion tipo formato_etiqueta color"></output>
         </div>
 
@@ -191,11 +188,6 @@
           <p class="field-note pdf-export-status" id="pdf-export-status" role="status" aria-live="polite"></p>
         </div>
       </form>
-
-      <p class="hint">
-        En modo masivo basta con cliente, código de la etiqueta y lote. Para producto MANUAL, la propia web decodifica el código de producción y genera cada certificado.
-        En modo individual, el lote completa las fechas automáticamente.
-      </p>
     </aside>
 
     <main class="panel-preview">
