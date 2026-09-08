@@ -3,6 +3,11 @@
   "use strict";
 
   const STORAGE_KEY = "samplast_clientes_personalizados_v1";
+  const DEFAULT_EXTRA_CLIENTS = [
+    { cliente: "ITS", corto: "ITS" },
+    { cliente: "PRODUCTORA DE ALIMENTOS", corto: "PRODUCTORA" },
+    { cliente: "INDUSTRIAS QUIMICA MENDOZA", corto: "MENDOZA" },
+  ];
 
   const promptText = document.getElementById("ia-prompt-text");
   const promptCount = document.getElementById("ia-prompt-client-count");
@@ -18,15 +23,18 @@
 
   function safeBaseClients() {
     try {
-      return typeof CLIENTES_DB !== "undefined" && Array.isArray(CLIENTES_DB)
-        ? CLIENTES_DB.map((item) => ({
-            cliente: String(item?.cliente || "").trim(),
-            corto: String(item?.corto || "").trim(),
-            origen: "base",
-          })).filter((item) => item.cliente)
+      const base = typeof CLIENTES_DB !== "undefined" && Array.isArray(CLIENTES_DB)
+        ? CLIENTES_DB
         : [];
+      return [...base, ...DEFAULT_EXTRA_CLIENTS]
+        .map((item) => ({
+          cliente: String(item?.cliente || "").trim(),
+          corto: String(item?.corto || "").trim(),
+          origen: "base",
+        }))
+        .filter((item) => item.cliente);
     } catch (_) {
-      return [];
+      return DEFAULT_EXTRA_CLIENTS.map((item) => ({ ...item, origen: "base" }));
     }
   }
 
@@ -190,7 +198,7 @@
         promptText.focus();
         promptText.select();
         document.execCommand("copy");
-        if (copyPromptStatus) copyPromptStatus.textContent = "Prompt seleccionado/copiedo. Si el navegador lo bloqueó, use Ctrl+C.";
+        if (copyPromptStatus) copyPromptStatus.textContent = "Prompt seleccionado/copiado. Si el navegador lo bloqueó, use Ctrl+C.";
       }
     }
   }
