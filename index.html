@@ -6,11 +6,13 @@
   <title>SAMPLAST - Certificado de Calidad</title>
   <link rel="stylesheet" href="css/certificado.css">
   <link rel="stylesheet" href="css/lote-masivo.css">
+  <link rel="stylesheet" href="css/clientes-admin.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1f4e79">
   <script src="js/cert-assets.js" defer></script>
   <script src="js/html2pdf.bundle.min.js" defer></script>
   <script src="js/app.js" defer></script>
+  <script src="js/clientes-admin.js" defer></script>
   <script src="js/lote-masivo.js" defer></script>
 </head>
 <body>
@@ -27,10 +29,10 @@
           <span class="bulk-badge">NUEVO</span>
         </div>
         <p class="bulk-help">
-          Pega una línea por certificado con el formato <strong>CLIENTE | CODIGO | LOTE</strong>.
+          Pega el JSON generado por la IA o una línea por certificado con <strong>CLIENTE | CODIGO | LOTE</strong>.
           La web decodifica ancho, micras, peso y fechas automáticamente.
         </p>
-        <textarea id="bulk-input" rows="6" spellcheck="false" placeholder="PRODUCTORA DE ALIMENTOS | 2010C030TD | 290826/R1-1DC&#10;PRODUCTORA DE ALIMENTOS | 2010C030TD | 040926/R1-2DC&#10;INDUSTRIAS QUIMICA MENDOZA | 2004C015TD | 070926/R1-2IS"></textarea>
+        <textarea id="bulk-input" rows="6" spellcheck="false" placeholder='[{"cliente":"PRODUCTORA DE ALIMENTOS","codigo":"2010C030TD","lote":"290826/R1-1DC"},{"cliente":"INDUSTRIAS QUIMICA MENDOZA","codigo":"2004C015TD","lote":"070926/R1-2IS"}]'></textarea>
         <div class="bulk-actions">
           <button class="btn btn-primary" id="btn-bulk-load" type="button">Cargar y revisar</button>
           <button class="btn btn-secondary" id="btn-bulk-print" type="button" disabled>Imprimir todos</button>
@@ -38,7 +40,49 @@
         </div>
         <div id="bulk-status" class="bulk-status" role="status" aria-live="polite"></div>
         <div id="bulk-table-container" class="bulk-table-wrap" hidden></div>
-        <p class="bulk-tip">También acepta JSON si la otra IA ya te devuelve una lista estructurada.</p>
+        <p class="bulk-tip">El JSON es el formato recomendado porque reduce errores al copiar varios certificados.</p>
+      </section>
+
+      <section class="assistant-tools" aria-label="Herramientas para IA y clientes">
+        <details class="tool-panel" open>
+          <summary>📋 Prompt para transcribir capturas con IA</summary>
+          <div class="tool-panel-content">
+            <p class="tool-help">
+              Adjunta las capturas de WhatsApp a ChatGPT, Gemini u otra IA y pega este prompt. La respuesta quedará lista para pegar arriba en <strong>Lote masivo</strong>.
+            </p>
+            <div class="prompt-meta">
+              <span>Formato de salida: JSON</span>
+              <span>Clientes incluidos: <strong id="ia-prompt-client-count">0</strong></span>
+            </div>
+            <textarea id="ia-prompt-text" readonly spellcheck="false" aria-label="Prompt completo para la IA"></textarea>
+            <div class="tool-actions">
+              <button class="btn btn-primary" id="btn-copy-ia-prompt" type="button">Copiar prompt completo</button>
+            </div>
+            <div id="copy-prompt-status" class="tool-status" role="status" aria-live="polite"></div>
+          </div>
+        </details>
+
+        <details class="tool-panel">
+          <summary>👥 Administrar clientes</summary>
+          <div class="tool-panel-content">
+            <p class="tool-help">
+              Añade un cliente nuevo una sola vez. Aparecerá inmediatamente en el autocompletado y también dentro del prompt para la IA.
+            </p>
+            <div class="client-add-grid">
+              <input id="nuevo-cliente-nombre" type="text" placeholder="Nombre oficial / razón social" autocomplete="off">
+              <input id="nuevo-cliente-corto" type="text" placeholder="Alias corto" autocomplete="off">
+            </div>
+            <div class="tool-actions">
+              <button class="btn btn-primary" id="btn-add-client" type="button">Añadir cliente</button>
+            </div>
+            <div id="clientes-status" class="tool-status" role="status" aria-live="polite"></div>
+            <div class="clients-summary">Base disponible: <strong id="clientes-total">0</strong> clientes en total.</div>
+            <div id="clientes-personalizados-list" class="clientes-custom-list"></div>
+            <p class="local-storage-note">
+              Los clientes añadidos desde esta sección se guardan en este navegador. No necesitas editar el código para seguir usándolos aquí.
+            </p>
+          </div>
+        </details>
       </section>
 
       <div class="mode-divider"><span>Modo individual</span></div>
@@ -123,7 +167,6 @@
           <input id="analista" name="analista" type="text" value="Dan Mergildo C.">
         </div>
 
-        <!-- Se conserva el input oculto porque app.js lo usa internamente para la vista previa. -->
         <input id="foto-etiqueta" name="foto-etiqueta" type="file" accept="image/*" hidden>
 
         <div class="field">
