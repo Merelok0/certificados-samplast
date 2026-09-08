@@ -1,42 +1,54 @@
+/* SAMPLAST - Herramientas IA y clientes integradas con la estética original */
+
 .assistant-tools {
-  margin: 14px 0;
+  margin: 12px 0 14px;
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .tool-panel {
   border: 1px solid #d5dbe3;
-  border-radius: 10px;
-  background: #f8fafc;
+  border-radius: 6px;
+  background: #fff;
   overflow: hidden;
 }
 
 .tool-panel > summary {
   cursor: pointer;
   list-style: none;
-  padding: 12px 14px;
-  font-size: 0.84rem;
-  font-weight: 800;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
   color: #1f4e79;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  background: #fff;
 }
 
+.tool-panel > summary:hover { background: #f8fafc; }
 .tool-panel > summary::-webkit-details-marker { display: none; }
-.tool-panel > summary::after { content: "+"; font-size: 1rem; }
+.tool-panel > summary::after {
+  content: "+";
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+.tool-panel[open] > summary {
+  border-bottom: 1px solid #e8edf2;
+}
 .tool-panel[open] > summary::after { content: "−"; }
 
 .tool-panel-content {
-  padding: 0 14px 14px;
+  padding: 10px 12px 12px;
 }
 
 .tool-help {
-  font-size: 0.75rem !important;
-  color: #64748b !important;
-  margin: 0 0 10px !important;
-  line-height: 1.45 !important;
+  font-size: 0.72rem !important;
+  color: #5c6672 !important;
+  margin: 0 0 9px !important;
+  line-height: 1.42 !important;
 }
 
 .prompt-meta {
@@ -44,61 +56,82 @@
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
-  font-size: 0.72rem;
-  color: #475569;
+  margin-bottom: 7px;
+  padding: 6px 8px;
+  border: 1px solid #e8edf2;
+  border-radius: 5px;
+  background: #f8fafc;
+  font-size: 0.68rem;
+  color: #64748b;
 }
 
 #ia-prompt-text {
   width: 100%;
-  min-height: 280px;
+  min-height: 220px;
+  max-height: 360px;
   resize: vertical;
   border: 1px solid #c9d2dc;
   border-radius: 6px;
-  padding: 10px;
-  font: 0.72rem/1.4 Consolas, "Courier New", monospace;
+  padding: 9px 10px;
+  font: 0.69rem/1.4 Consolas, "Courier New", monospace;
   background: #fff;
   color: #111827;
 }
 
+#ia-prompt-text:focus {
+  outline: none;
+  border-color: #1f4e79;
+  box-shadow: 0 0 0 2px rgba(31, 78, 121, 0.10);
+}
+
 .tool-actions {
   display: grid;
-  gap: 8px;
+  gap: 7px;
   margin-top: 8px;
 }
 
 .tool-status {
   min-height: 1.1em;
   margin-top: 6px;
-  font-size: 0.72rem;
+  font-size: 0.69rem;
   color: #166534;
+  line-height: 1.35;
 }
 
 .client-add-grid {
   display: grid;
-  grid-template-columns: 1fr 120px;
-  gap: 8px;
+  grid-template-columns: 1fr 105px;
+  gap: 7px;
 }
 
 .client-add-grid input {
   width: 100%;
   border: 1px solid #c9d2dc;
   border-radius: 6px;
-  padding: 8px 10px;
+  padding: 8px 9px;
   font: inherit;
+  background: #fff;
+}
+
+.client-add-grid input:focus {
+  outline: none;
+  border-color: #1f4e79;
+  box-shadow: 0 0 0 2px rgba(31, 78, 121, 0.10);
 }
 
 .clients-summary {
-  margin: 10px 0 6px;
-  font-size: 0.73rem;
-  color: #475569;
+  margin: 9px 0 6px;
+  padding-top: 8px;
+  border-top: 1px solid #e8edf2;
+  font-size: 0.7rem;
+  color: #5c6672;
 }
 
 .clientes-custom-list {
-  max-height: 220px;
+  max-height: 190px;
   overflow: auto;
   display: grid;
-  gap: 6px;
+  gap: 5px;
 }
 
 .cliente-custom-row {
@@ -109,13 +142,14 @@
   padding: 7px 8px;
   background: #fff;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 0.72rem;
+  border-radius: 5px;
+  font-size: 0.69rem;
 }
 
 .cliente-custom-row strong {
   display: block;
   line-height: 1.3;
+  font-weight: 700;
 }
 
 .cliente-custom-row span {
@@ -127,21 +161,27 @@
 
 .cliente-delete-btn {
   flex: 0 0 auto;
-  border: 1px solid #fecaca;
-  background: #fff1f2;
-  color: #b91c1c;
+  border: 1px solid #d5dbe3;
+  background: #f8fafc;
+  color: #6b7280;
   border-radius: 5px;
-  padding: 5px 7px;
-  font-size: 0.68rem;
+  padding: 4px 7px;
+  font-size: 0.66rem;
   cursor: pointer;
+}
+
+.cliente-delete-btn:hover {
+  border-color: #f1b9b9;
+  background: #fffafa;
+  color: #b91c1c;
 }
 
 .clientes-empty {
   margin: 0 !important;
-  padding: 8px;
+  padding: 7px 8px;
   border: 1px dashed #cbd5e1;
-  border-radius: 6px;
-  font-size: 0.72rem !important;
+  border-radius: 5px;
+  font-size: 0.69rem !important;
   color: #64748b !important;
 }
 
@@ -149,11 +189,13 @@
 #clientes-status.is-ok { color: #166534; }
 
 .local-storage-note {
-  margin-top: 8px !important;
-  font-size: 0.68rem !important;
+  margin-top: 7px !important;
+  font-size: 0.66rem !important;
   color: #64748b !important;
+  line-height: 1.35 !important;
 }
 
 @media (max-width: 480px) {
   .client-add-grid { grid-template-columns: 1fr; }
+  .prompt-meta { align-items: flex-start; flex-direction: column; gap: 3px; }
 }
