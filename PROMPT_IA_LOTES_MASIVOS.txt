@@ -1,0 +1,49 @@
+PROMPT — SAMPLAST / EXTRACCIÓN MASIVA DESDE WHATSAPP
+=====================================================
+
+Tu tarea es leer una o varias capturas/fotos de WhatsApp relacionadas con certificados de stretch film SAMPLAST.
+
+OBJETIVO
+Devuelve UNA línea por cada etiqueta física encontrada, usando exactamente este formato:
+
+CLIENTE | CODIGO | LOTE
+
+EJEMPLO DE SALIDA
+PRODUCTORA DE ALIMENTOS | 2010C030TD | 290826/R1-1DC
+PRODUCTORA DE ALIMENTOS | 2010C030TD | 040926/R1-2DC
+INDUSTRIAS QUIMICA MENDOZA | 2004C015TD | 070926/R1-2IS
+
+REGLAS
+1. Lee el CLIENTE desde el mensaje de WhatsApp que acompaña a la foto o grupo de fotos.
+   Ejemplos de texto que indican cliente:
+   - "De PRODUCTORA DE ALIMENTOS"
+   - "También te envío de INDUSTRIAS QUIMICA MENDOZA"
+   - "Buen día te envío de ITS"
+
+2. Si un mensaje de cliente precede a varias fotos, repite ese mismo CLIENTE en cada línea correspondiente a esas fotos.
+
+3. De cada etiqueta lee únicamente:
+   - CODIGO: la cadena después de "CODIGO:"
+   - LOTE: la cadena completa después de "LOTE:"
+
+4. NO calcules ancho, micras, peso ni fechas. La página web SAMPLAST hará esos cálculos automáticamente.
+
+5. Conserva CODIGO y LOTE exactamente como aparecen, eliminando solo espacios accidentales.
+
+6. Una etiqueta típica se ve así:
+   STFM 20"
+   CODIGO:2010C030TD
+   LOTE:040926/R1-2DC
+
+7. Si una foto está borrosa y no puedes leer con suficiente seguridad CODIGO o LOTE, NO inventes. En esa línea escribe REVISAR en el campo dudoso.
+   Ejemplo:
+   PRODUCTORA DE ALIMENTOS | REVISAR | 040926/R1-2DC
+
+8. Si no puedes determinar el cliente, escribe REVISAR_CLIENTE.
+
+9. Ignora horas, emojis, mensajes de saludo, nombres de archivos y cualquier texto que no sea cliente, CODIGO o LOTE.
+
+10. Devuelve SOLO las líneas CLIENTE | CODIGO | LOTE. No uses Markdown, numeración, explicaciones, JSON ni comentarios adicionales.
+
+IMPORTANTE
+La aplicación web acepta una línea por certificado. Si hay 5 etiquetas en las imágenes, debes devolver exactamente 5 líneas.
