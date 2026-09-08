@@ -5,22 +5,43 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SAMPLAST - Certificado de Calidad</title>
   <link rel="stylesheet" href="css/certificado.css">
+  <link rel="stylesheet" href="css/lote-masivo.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1f4e79">
-  <script src="config.js"></script>
   <script src="js/cert-assets.js" defer></script>
   <script src="js/html2pdf.bundle.min.js" defer></script>
   <script src="js/app.js" defer></script>
-  <script src="js/auth.js" defer></script>
-  <script src="js/gemini-etiqueta.js" defer></script>
+  <script src="js/lote-masivo.js" defer></script>
 </head>
 <body>
 
   <div class="app">
     <aside class="panel-form">
 
-      <h1>Certificado de Calidad</h1>
-      <p>Llena el formulario y genera el PDF. Usa 📷 para leer la etiqueta con IA automáticamente.</p>
+      <h1>Certificados de Calidad</h1>
+      <p>Genera un certificado individual o carga varios lotes de una sola vez.</p>
+
+      <section class="bulk-panel" aria-labelledby="bulk-title">
+        <div class="bulk-title-row">
+          <h2 id="bulk-title">⚡ Lote masivo</h2>
+          <span class="bulk-badge">NUEVO</span>
+        </div>
+        <p class="bulk-help">
+          Pega una línea por certificado con el formato <strong>CLIENTE | CODIGO | LOTE</strong>.
+          La web decodifica ancho, micras, peso y fechas automáticamente.
+        </p>
+        <textarea id="bulk-input" rows="6" spellcheck="false" placeholder="PRODUCTORA DE ALIMENTOS | 2010C030TD | 290826/R1-1DC&#10;PRODUCTORA DE ALIMENTOS | 2010C030TD | 040926/R1-2DC&#10;INDUSTRIAS QUIMICA MENDOZA | 2004C015TD | 070926/R1-2IS"></textarea>
+        <div class="bulk-actions">
+          <button class="btn btn-primary" id="btn-bulk-load" type="button">Cargar y revisar</button>
+          <button class="btn btn-secondary" id="btn-bulk-print" type="button" disabled>Imprimir todos</button>
+          <button class="btn btn-secondary" id="btn-bulk-pdf" type="button" disabled>Guardar PDF único</button>
+        </div>
+        <div id="bulk-status" class="bulk-status" role="status" aria-live="polite"></div>
+        <div id="bulk-table-container" class="bulk-table-wrap" hidden></div>
+        <p class="bulk-tip">También acepta JSON si la otra IA ya te devuelve una lista estructurada.</p>
+      </section>
+
+      <div class="mode-divider"><span>Modo individual</span></div>
 
       <form id="cert-form">
 
@@ -92,7 +113,9 @@
 
         <div class="field">
           <label for="lote">Lote completo</label>
-          <input id="lote" name="lote" type="text" placeholder="Ej. 230626/R1-2DC">
+          <input id="lote" name="lote" type="text" placeholder="Ej. 040926/R1-2DC">
+          <span class="field-note">Los primeros 6 dígitos (DDMMAA) completan automáticamente la fecha de fabricación y la fecha de emisión (+1 día).</span>
+          <span class="field-note lote-date-status" id="lote-date-status"></span>
         </div>
 
         <div class="field">
@@ -100,15 +123,8 @@
           <input id="analista" name="analista" type="text" value="Dan Mergildo C.">
         </div>
 
-        <!-- FOTO + BOTÓN IA -->
-        <div class="field">
-          <label for="foto-etiqueta">📷 Foto de etiqueta (para leer con IA)</label>
-          <input id="foto-etiqueta" name="foto-etiqueta" type="file" accept="image/*" capture="environment" style="margin-bottom:8px;">
-          <button class="btn" id="btn-leer-ia" type="button" disabled>
-            🔍 Leer etiqueta con IA (Gemini)
-          </button>
-          <div id="ia-status" class="field-note" role="status" aria-live="polite"></div>
-        </div>
+        <!-- Se conserva el input oculto porque app.js lo usa internamente para la vista previa. -->
+        <input id="foto-etiqueta" name="foto-etiqueta" type="file" accept="image/*" hidden>
 
         <div class="field">
           <label for="pdf-orientation">Orientación al exportar</label>
@@ -135,9 +151,8 @@
       </form>
 
       <p class="hint">
-        El formato etiqueta arma el nombre STRETCH FILM, las celdas MEDIDAS/VALOR MEDIDO y el texto de apariencia si hay color.
-        La fecha de emisión se completa con +1 día si la dejas vacía.
-        Use <strong>ABRIR_CERTIFICADO.bat</strong> y luego <strong>Guardar PDF…</strong> para elegir carpeta y nombre (como pestaña Excel).
+        En modo masivo basta con cliente, código de la etiqueta y lote. Para producto MANUAL, la propia web decodifica el código de producción y genera cada certificado.
+        En modo individual, el lote completa las fechas automáticamente.
       </p>
     </aside>
 
@@ -153,5 +168,6 @@
     </main>
   </div>
 
+  <div id="batch-print-root" aria-hidden="true"></div>
 </body>
 </html>
