@@ -1,7 +1,7 @@
-/* SAMPLAST - Herramientas IA y clientes integradas con la estética original */
+/* SAMPLAST - Prompt IA y administración de clientes con estética del formulario original */
 
 .assistant-tools {
-  margin: 12px 0 14px;
+  margin: 0 0 14px;
   display: grid;
   gap: 8px;
 }
@@ -15,100 +15,81 @@
 
 .tool-panel > summary {
   cursor: pointer;
-  list-style: none;
-  padding: 10px 12px;
+  padding: 9px 10px;
   font-size: 0.78rem;
   font-weight: 700;
-  color: #1f4e79;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  color: #000;
   background: #fff;
 }
 
 .tool-panel > summary:hover { background: #f8fafc; }
-.tool-panel > summary::-webkit-details-marker { display: none; }
-.tool-panel > summary::after {
-  content: "+";
-  color: #64748b;
-  font-size: 0.9rem;
-  font-weight: 400;
-}
-.tool-panel[open] > summary {
-  border-bottom: 1px solid #e8edf2;
-}
-.tool-panel[open] > summary::after { content: "−"; }
+.tool-panel[open] > summary { border-bottom: 1px solid #e8edf2; }
 
 .tool-panel-content {
-  padding: 10px 12px 12px;
+  padding: 10px;
 }
 
 .tool-help {
   font-size: 0.72rem !important;
-  color: #5c6672 !important;
+  color: #64748b !important;
   margin: 0 0 9px !important;
-  line-height: 1.42 !important;
+  line-height: 1.4 !important;
 }
 
 .prompt-meta {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   gap: 8px;
   margin-bottom: 7px;
-  padding: 6px 8px;
-  border: 1px solid #e8edf2;
-  border-radius: 5px;
-  background: #f8fafc;
-  font-size: 0.68rem;
+  font-size: 0.69rem;
   color: #64748b;
 }
 
 #ia-prompt-text {
   width: 100%;
-  min-height: 220px;
-  max-height: 360px;
+  min-height: 190px;
+  max-height: 320px;
   resize: vertical;
   border: 1px solid #c9d2dc;
   border-radius: 6px;
-  padding: 9px 10px;
-  font: 0.69rem/1.4 Consolas, "Courier New", monospace;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 0.74rem;
+  line-height: 1.4;
   background: #fff;
-  color: #111827;
+  color: #000;
 }
 
 #ia-prompt-text:focus {
   outline: none;
   border-color: #1f4e79;
-  box-shadow: 0 0 0 2px rgba(31, 78, 121, 0.10);
 }
 
 .tool-actions {
   display: grid;
-  gap: 7px;
+  gap: 8px;
   margin-top: 8px;
 }
 
 .tool-status {
   min-height: 1.1em;
   margin-top: 6px;
-  font-size: 0.69rem;
+  font-size: 0.7rem;
   color: #166534;
   line-height: 1.35;
 }
 
 .client-add-grid {
   display: grid;
-  grid-template-columns: 1fr 105px;
-  gap: 7px;
+  grid-template-columns: 1fr 110px;
+  gap: 8px;
 }
 
 .client-add-grid input {
   width: 100%;
   border: 1px solid #c9d2dc;
   border-radius: 6px;
-  padding: 8px 9px;
+  padding: 8px 10px;
   font: inherit;
   background: #fff;
 }
@@ -116,19 +97,16 @@
 .client-add-grid input:focus {
   outline: none;
   border-color: #1f4e79;
-  box-shadow: 0 0 0 2px rgba(31, 78, 121, 0.10);
 }
 
 .clients-summary {
   margin: 9px 0 6px;
-  padding-top: 8px;
-  border-top: 1px solid #e8edf2;
   font-size: 0.7rem;
-  color: #5c6672;
+  color: #64748b;
 }
 
 .clientes-custom-list {
-  max-height: 190px;
+  max-height: 180px;
   overflow: auto;
   display: grid;
   gap: 5px;
@@ -142,8 +120,8 @@
   padding: 7px 8px;
   background: #fff;
   border: 1px solid #e2e8f0;
-  border-radius: 5px;
-  font-size: 0.69rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
 }
 
 .cliente-custom-row strong {
@@ -156,32 +134,26 @@
   display: block;
   margin-top: 2px;
   color: #64748b;
-  font-family: Consolas, "Courier New", monospace;
 }
 
 .cliente-delete-btn {
   flex: 0 0 auto;
-  border: 1px solid #d5dbe3;
-  background: #f8fafc;
-  color: #6b7280;
-  border-radius: 5px;
-  padding: 4px 7px;
-  font-size: 0.66rem;
+  border: 1px solid #c9d2dc;
+  background: #e8edf2;
+  color: #1f2937;
+  border-radius: 6px;
+  padding: 5px 7px;
+  font-size: 0.68rem;
+  font-weight: 700;
   cursor: pointer;
-}
-
-.cliente-delete-btn:hover {
-  border-color: #f1b9b9;
-  background: #fffafa;
-  color: #b91c1c;
 }
 
 .clientes-empty {
   margin: 0 !important;
   padding: 7px 8px;
-  border: 1px dashed #cbd5e1;
-  border-radius: 5px;
-  font-size: 0.69rem !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.7rem !important;
   color: #64748b !important;
 }
 
@@ -190,12 +162,12 @@
 
 .local-storage-note {
   margin-top: 7px !important;
-  font-size: 0.66rem !important;
+  font-size: 0.68rem !important;
   color: #64748b !important;
   line-height: 1.35 !important;
 }
 
 @media (max-width: 480px) {
   .client-add-grid { grid-template-columns: 1fr; }
-  .prompt-meta { align-items: flex-start; flex-direction: column; gap: 3px; }
+  .prompt-meta { flex-direction: column; gap: 3px; }
 }
