@@ -1,11 +1,11 @@
-/* SAMPLAST - Modo masivo */
+/* SAMPLAST - Modo masivo integrado con la estética original */
 
 .bulk-panel {
-  margin: 14px 0 18px;
-  padding: 14px;
-  border: 1px solid #bfd0df;
-  border-radius: 10px;
-  background: #f7fbff;
+  margin: 14px 0 16px;
+  padding: 12px;
+  border: 1px solid #d5dbe3;
+  border-radius: 6px;
+  background: #fff;
 }
 
 .bulk-title-row {
@@ -14,63 +14,69 @@
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 6px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid #e8edf2;
 }
 
 .bulk-title-row h2 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   color: #1f4e79;
+  font-weight: 700;
 }
 
 .bulk-badge {
   display: inline-block;
-  padding: 3px 6px;
-  border-radius: 999px;
-  background: #dbeafe;
-  color: #1d4ed8;
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  padding: 2px 5px;
+  border-radius: 4px;
+  border: 1px solid #c9d2dc;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
 }
 
 .panel-form .bulk-help,
 .panel-form .bulk-tip {
-  margin: 0 0 9px;
-  color: #475569;
-  font-size: 0.75rem;
+  margin: 0 0 8px;
+  color: #5c6672;
+  font-size: 0.73rem;
   line-height: 1.4;
 }
 
 .panel-form .bulk-tip {
-  margin: 8px 0 0;
-  font-size: 0.69rem;
+  margin: 7px 0 0;
+  font-size: 0.68rem;
+  color: #64748b;
 }
 
 #bulk-input {
   display: block;
   width: 100%;
-  min-height: 112px;
+  min-height: 92px;
   resize: vertical;
-  border: 1px solid #9fb4c7;
-  border-radius: 7px;
-  padding: 9px 10px;
+  border: 1px solid #c9d2dc;
+  border-radius: 6px;
+  padding: 8px 10px;
   background: #fff;
-  color: #0f172a;
+  color: #111827;
   font-family: Consolas, "Courier New", monospace;
-  font-size: 0.72rem;
-  line-height: 1.45;
+  font-size: 0.7rem;
+  line-height: 1.42;
 }
 
 #bulk-input:focus {
-  outline: 2px solid rgba(31, 78, 121, 0.18);
+  outline: none;
   border-color: #1f4e79;
+  box-shadow: 0 0 0 2px rgba(31, 78, 121, 0.10);
 }
 
 .bulk-actions {
   display: grid;
   grid-template-columns: 1fr;
   gap: 7px;
-  margin-top: 9px;
+  margin-top: 8px;
 }
 
 .bulk-actions .btn:disabled {
@@ -79,11 +85,11 @@
 }
 
 .bulk-status {
-  min-height: 1.3em;
-  margin-top: 8px;
-  font-size: 0.72rem;
+  min-height: 1.2em;
+  margin-top: 7px;
+  font-size: 0.7rem;
   line-height: 1.35;
-  color: #475569;
+  color: #5c6672;
 }
 
 .bulk-status.is-ok {
@@ -97,10 +103,10 @@
 }
 
 .bulk-table-wrap {
-  margin-top: 10px;
+  margin-top: 9px;
   overflow-x: auto;
-  border: 1px solid #d6e0e8;
-  border-radius: 7px;
+  border: 1px solid #d5dbe3;
+  border-radius: 6px;
   background: #fff;
 }
 
@@ -108,13 +114,13 @@
   width: 100%;
   min-width: 760px;
   border-collapse: collapse;
-  font-size: 0.68rem;
+  font-size: 0.67rem;
 }
 
 .bulk-table th,
 .bulk-table td {
-  border-bottom: 1px solid #e2e8f0;
-  border-right: 1px solid #eef2f7;
+  border-bottom: 1px solid #e8edf2;
+  border-right: 1px solid #eef1f5;
   padding: 6px 7px;
   text-align: left;
   vertical-align: top;
@@ -124,19 +130,14 @@
 .bulk-table th {
   position: sticky;
   top: 0;
-  background: #edf4fa;
-  color: #1e3a5f;
-  font-weight: 800;
+  background: #f8fafc;
+  color: #1f4e79;
+  font-weight: 700;
   white-space: nowrap;
 }
 
-.bulk-table tr:last-child td {
-  border-bottom: 0;
-}
-
-.bulk-table tr.has-error td {
-  background: #fff7f7;
-}
+.bulk-table tr:last-child td { border-bottom: 0; }
+.bulk-table tr.has-error td { background: #fffafa; }
 
 .bulk-table code {
   font-family: Consolas, "Courier New", monospace;
@@ -145,7 +146,7 @@
 
 .bulk-row-ok {
   color: #166534;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .bulk-row-error {
@@ -154,25 +155,27 @@
 }
 
 .bulk-row-load {
-  border: 1px solid #a9bac8;
+  border: 1px solid #c9d2dc;
   border-radius: 5px;
   padding: 4px 7px;
-  background: #fff;
-  color: #1f4e79;
+  background: #e8edf2;
+  color: #1f2937;
   font-weight: 700;
   cursor: pointer;
 }
+
+.bulk-row-load:hover { background: #dfe6ed; }
 
 .mode-divider {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 18px 0 14px;
+  margin: 17px 0 13px;
   color: #64748b;
-  font-size: 0.72rem;
-  font-weight: 800;
+  font-size: 0.68rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
 }
 
 .mode-divider::before,
@@ -188,9 +191,7 @@
   font-weight: 600;
 }
 
-.lote-date-status.is-error {
-  color: #b91c1c;
-}
+.lote-date-status.is-error { color: #b91c1c; }
 
 #batch-print-root {
   display: none;
@@ -207,13 +208,8 @@
   page-break-after: auto;
 }
 
-body.batch-pdf-mode {
-  background: #fff;
-}
-
-body.batch-pdf-mode .app {
-  display: none !important;
-}
+body.batch-pdf-mode { background: #fff; }
+body.batch-pdf-mode .app { display: none !important; }
 
 body.batch-pdf-mode #batch-print-root {
   display: block !important;
@@ -232,14 +228,8 @@ body.batch-pdf-mode #batch-print-root .cert-page {
 }
 
 @media print {
-  body.batch-print-mode .app {
-    display: none !important;
-  }
-
-  body.batch-print-mode #batch-print-root {
-    display: block !important;
-  }
-
+  body.batch-print-mode .app { display: none !important; }
+  body.batch-print-mode #batch-print-root { display: block !important; }
   body.batch-print-mode #batch-print-root .cert-page {
     width: auto !important;
     min-width: 0 !important;
@@ -251,7 +241,5 @@ body.batch-pdf-mode #batch-print-root .cert-page {
 }
 
 @media (min-width: 560px) and (max-width: 1100px) {
-  .bulk-actions {
-    grid-template-columns: repeat(3, 1fr);
-  }
+  .bulk-actions { grid-template-columns: repeat(3, 1fr); }
 }
