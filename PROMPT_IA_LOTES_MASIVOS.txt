@@ -1,42 +1,51 @@
-PROMPT — SAMPLAST / EXTRACCIÓN MASIVA DESDE WHATSAPP
-=====================================================
+INSTRUCTIVO — SAMPLAST / TRANSCRIPCIÓN MASIVA DESDE WHATSAPP
+=============================================================
 
-NOTA
-La versión principal y más actualizada de este prompt está integrada en la propia página web SAMPLAST, en la sección “Prompt para transcribir capturas con IA”. Esa versión añade automáticamente la lista vigente de clientes y permite copiar todo con un botón.
+La versión principal y vigente del instructivo está integrada en la página SAMPLAST, en la sección:
 
-OBJETIVO
-Lee una o varias capturas/fotos de WhatsApp relacionadas con certificados de stretch film SAMPLAST e identifica cada etiqueta física.
+INSTRUCTIVO PARA TRANSCRIPCIÓN CON IA
 
-SALIDA OBLIGATORIA
-Devuelve ÚNICAMENTE JSON válido, sin Markdown, explicaciones ni texto adicional.
+Use siempre esa versión porque se actualiza automáticamente con la lista actual de clientes.
 
-Estructura:
+FORMATO DE SALIDA VIGENTE
+-------------------------
+La IA debe devolver únicamente JSON válido y debe conservar el TIPO REAL de cada etiqueta:
+
 [
-  {"cliente":"NOMBRE DEL CLIENTE","codigo":"2010C030TD","lote":"040926/R1-2DC"}
+  {
+    "cliente": "NOMBRE DEL CLIENTE",
+    "tipo": "MANUAL",
+    "color": "",
+    "codigo": "2012C030TD",
+    "lote": "080926/R1-1DC"
+  }
 ]
 
-REGLAS
-1. Debe existir un objeto JSON por cada etiqueta física visible.
-2. Lee el cliente desde el mensaje de WhatsApp que acompaña a la foto o grupo de fotos.
-3. Si un mensaje de cliente precede a varias fotos, repite ese cliente en cada objeto correspondiente hasta que aparezca un nuevo mensaje que cambie el cliente.
-4. De cada etiqueta extrae solamente:
-   - codigo: cadena completa después de CODIGO:
-   - lote: cadena completa después de LOTE:
-5. NO calcules ancho, micras, peso ni fechas. La página web SAMPLAST hará esos cálculos automáticamente.
-6. Conserva CODIGO y LOTE exactamente como aparecen, eliminando solo espacios accidentales.
-7. Si una foto está borrosa y no puedes leer con seguridad CODIGO o LOTE, usa "REVISAR" en el campo dudoso. No inventes caracteres.
-8. Si no puedes determinar el cliente, usa "REVISAR_CLIENTE".
-9. Ignora horas, emojis, saludos, nombres de archivo y cualquier texto que no sea cliente, CODIGO o LOTE.
-10. Si el cliente coincide claramente con un cliente conocido de la base SAMPLAST, usa el nombre oficial de la base.
-11. Si un cliente nuevo no está en la base pero su nombre es legible, conserva el nombre visible sin inventar una razón social.
-12. Antes de responder, cuenta las etiquetas físicas y verifica que el número de objetos JSON sea el mismo.
+Valores admitidos para tipo:
+- MANUAL
+- AUTOMATICO
+- PRE-ESTIRADO
+- MANUAL_COLOR
+- REVISAR, si la categoría no puede determinarse con seguridad
 
-EJEMPLO
+REGLA CRÍTICA
+--------------
+NO asumir MANUAL para todas las etiquetas.
+
+- STFM / STMF sin otra categoría -> MANUAL
+- Si la etiqueta dice AUTOMATICO / AUTOMÁTICO -> AUTOMATICO
+- Si dice PRE-ESTIRADO / PRE ESTIRADO / PREESTIRADO -> PRE-ESTIRADO
+- Si corresponde a film manual de color -> MANUAL_COLOR y completar color
+- Si no puede determinarse el tipo -> REVISAR
+
+Un mismo cliente puede tener etiquetas de tipos diferentes en la misma captura.
+
+EJEMPLO MIXTO
+-------------
 [
-  {"cliente":"PRODUCTORA DE ALIMENTOS","codigo":"2010C030TD","lote":"290826/R1-1DC"},
-  {"cliente":"PRODUCTORA DE ALIMENTOS","codigo":"2010C030TD","lote":"040926/R1-2DC"},
-  {"cliente":"INDUSTRIAS QUIMICA MENDOZA","codigo":"2004C015TD","lote":"070926/R1-2IS"}
+  {"cliente":"INDUSTRIAS DEL PAPEL S.A.","tipo":"MANUAL","color":"","codigo":"2012C030TD","lote":"080926/R1-1DC"},
+  {"cliente":"BIIPLAST","tipo":"AUTOMATICO","color":"","codigo":"2014C0160TG","lote":"270626/E4-2RQ"},
+  {"cliente":"BIIPLAST","tipo":"MANUAL","color":"","codigo":"2012C014TD","lote":"080926/R1-2IS"}
 ]
 
-IMPORTANTE
-Para obtener la lista completa y actualizada de clientes, utiliza el prompt que aparece dentro de la página web. Ese prompt se reconstruye automáticamente cuando se agregan clientes nuevos desde la sección “Administrar clientes”.
+La página SAMPLAST calcula automáticamente características del producto y fechas a partir del código y lote cuando el patrón está reconocido.
