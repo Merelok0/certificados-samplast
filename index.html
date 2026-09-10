@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SAMPLAST - Certificado de Calidad</title>
   <link rel="stylesheet" href="css/certificado.css?v=final-20260908-2">
-  <link rel="stylesheet" href="css/lote-masivo.css?v=final-20260908-2">
+  <link rel="stylesheet" href="css/lote-masivo.css?v=final-20260910-2">
   <link rel="stylesheet" href="css/clientes-admin.css?v=final-20260908-2">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1f4e79">
@@ -14,7 +14,7 @@
   <script src="js/app.js?v=final-20260908-2" defer></script>
   <script src="js/clientes-admin.js?v=final-20260909-1" defer></script>
   <script src="js/lote-masivo.js?v=final-20260908-2" defer></script>
-  <script src="js/lote-masivo-v2.js?v=final-20260910-1" data-samplast-lotes-v2="1" defer></script>
+  <script src="js/lote-masivo-v3.js?v=final-20260910-2" data-samplast-lotes-v2="1" defer></script>
 </head>
 <body>
 
@@ -29,17 +29,25 @@
           <h2 id="bulk-title">Carga masiva</h2>
         </div>
         <p class="bulk-help">
-          Pegue el JSON generado por la IA. Cada certificado debe incluir <strong>cliente, tipo, codigo y lote</strong>.
-          El sistema respeta la categoría real del producto y completa automáticamente las características y fechas.
+          Pegue el JSON generado por la IA. Puede revisar o eliminar registros antes de imprimir o guardar.
         </p>
-        <textarea id="bulk-input" rows="5" spellcheck="false" placeholder='[{"cliente":"INDUSTRIAS DEL PAPEL S.A.","tipo":"MANUAL","codigo":"2012C030TD","lote":"080926/R1-1DC"},{"cliente":"BIIPLAST","tipo":"AUTOMATICO","codigo":"2014C0160TG","lote":"270626/E4-2RQ"}]'></textarea>
+        <textarea id="bulk-input" rows="5" spellcheck="false" placeholder='[{"cliente":"GALVEZ FILM S.A.C.","tipo":"MANUAL","codigo":"1812C029TD","formato":"","lote":"090926/R9-2JC"}]'></textarea>
         <div class="bulk-actions">
           <button class="btn btn-primary" id="btn-bulk-load" type="button">Cargar y revisar</button>
           <button class="btn btn-secondary" id="btn-bulk-print" type="button" disabled>Imprimir todos</button>
-          <button class="btn btn-secondary" id="btn-bulk-pdf" type="button" disabled>Guardar PDF único</button>
+          <button class="btn btn-secondary" id="btn-bulk-pdf" type="button" disabled>Guardar PDFs separados</button>
         </div>
         <div id="bulk-status" class="bulk-status" role="status" aria-live="polite"></div>
         <div id="bulk-table-container" class="bulk-table-wrap" hidden></div>
+      </section>
+
+      <section class="current-cert-actions" aria-label="Acciones del certificado mostrado">
+        <p class="current-cert-actions-title">Certificado mostrado</p>
+        <div class="current-cert-buttons">
+          <button class="btn btn-primary" id="btn-pdf" type="button">Guardar PDF mostrado</button>
+          <button class="btn btn-secondary" id="btn-print" type="button">Imprimir mostrado</button>
+        </div>
+        <p class="field-note pdf-export-status" id="pdf-export-status" role="status" aria-live="polite"></p>
       </section>
 
       <section class="assistant-tools" aria-label="Herramientas auxiliares">
@@ -82,113 +90,113 @@
         </details>
       </section>
 
-      <div class="mode-divider"><span>Certificado individual</span></div>
+      <details class="tool-panel individual-panel">
+        <summary>Certificado individual</summary>
+        <div class="tool-panel-content">
+          <form id="cert-form">
 
-      <form id="cert-form">
+            <div class="field">
+              <label for="cliente">Cliente</label>
+              <input id="cliente" name="cliente" type="text" required placeholder="Ej. COMPAÑIA MOLINERA DEL CENTRO S.A." list="clientes-list">
+              <datalist id="clientes-list"></datalist>
+            </div>
 
-        <div class="field">
-          <label for="cliente">Cliente</label>
-          <input id="cliente" name="cliente" type="text" required placeholder="Ej. COMPAÑIA MOLINERA DEL CENTRO S.A." list="clientes-list">
-          <datalist id="clientes-list"></datalist>
+            <div class="field-row">
+              <div class="field">
+                <label for="fecha_fabricacion">Fecha fabricación</label>
+                <input id="fecha_fabricacion" name="fecha_fabricacion" type="date" required>
+              </div>
+              <div class="field">
+                <label for="fecha_emision">Fecha emisión</label>
+                <input id="fecha_emision" name="fecha_emision" type="date">
+              </div>
+              <div class="field">
+                <label for="tipo">Tipo producto</label>
+                <select id="tipo" name="tipo">
+                  <option value="MANUAL">Manual</option>
+                  <option value="PRE-ESTIRADO">Pre-estirado</option>
+                  <option value="AUTOMATICO">Automático</option>
+                  <option value="MANUAL_COLOR">Manual con color</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field" id="color-field" hidden>
+              <label>Color del film</label>
+              <input type="hidden" id="color" name="color" value="">
+              <div class="color-switch" role="group" aria-label="Color del film">
+                <button class="color-btn" type="button" data-color="NEGRO">Negro</button>
+                <button class="color-btn" type="button" data-color="ROJO">Rojo</button>
+                <button class="color-btn" type="button" data-color="AZUL">Azul</button>
+                <button class="color-btn" type="button" data-color="VERDE">Verde</button>
+                <button class="color-btn" type="button" data-color="AMARILLO">Amarillo</button>
+              </div>
+              <span class="field-note" id="apariencia-preview"></span>
+            </div>
+
+            <div class="field">
+              <label for="formato_etiqueta">Formato etiqueta (ancho*espesor*peso)</label>
+              <input id="formato_etiqueta" name="formato_etiqueta" type="text" required placeholder="Ej. 18*20*2.0">
+              <span class="field-note">Ej. 18*20*2.0 → 18" ancho, 20 µm, 2.0 kg. Pre-estirado siempre usa 18" y en ancho muestra 420*.</span>
+            </div>
+
+            <div class="field">
+              <label>Nombre de producto generado</label>
+              <output id="producto-preview" class="producto-preview" for="formato_etiqueta tipo color"></output>
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="ancho">Ancho (pulgadas)</label>
+                <input id="ancho" name="ancho" type="number" min="1" max="30" step="0.1" required>
+              </div>
+              <div class="field">
+                <label for="espesor">Espesor (µm)</label>
+                <input id="espesor" name="espesor" type="number" min="1" max="50" step="0.1" required>
+              </div>
+              <div class="field">
+                <label for="peso">Peso (kg)</label>
+                <input id="peso" name="peso" type="number" min="0.1" max="30" step="0.1" required>
+              </div>
+            </div>
+            <p class="field-note medidas-note">Medidas y valor medido del certificado se calculan desde estos datos (mm = pulgadas × 25,4).</p>
+
+            <div class="field">
+              <label for="lote">Lote completo</label>
+              <input id="lote" name="lote" type="text" placeholder="Ej. 040926/R1-2DC">
+              <span class="field-note">Los primeros 6 dígitos (DDMMAA) completan automáticamente la fecha de fabricación y la fecha de emisión (+1 día).</span>
+              <span class="field-note lote-date-status" id="lote-date-status"></span>
+            </div>
+
+            <div class="field">
+              <label for="analista">Analista de calidad</label>
+              <input id="analista" name="analista" type="text" value="Dan Mergildo C.">
+            </div>
+
+            <input id="foto-etiqueta" name="foto-etiqueta" type="file" accept="image/*" hidden>
+
+            <div class="field">
+              <label for="pdf-orientation">Orientación al exportar</label>
+              <select id="pdf-orientation" name="pdf_orientation">
+                <option value="portrait" selected>Vertical (predeterminado)</option>
+                <option value="landscape">Horizontal</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Nombre del PDF</label>
+              <output id="pdf-name-preview" class="pdf-name-preview" for="cliente fecha_fabricacion tipo formato_etiqueta color"></output>
+            </div>
+
+            <div class="actions">
+              <button class="btn btn-secondary" id="btn-ejemplo" type="button">Cargar ejemplo INSUPACK (18*20*2.0)</button>
+              <button class="btn btn-secondary" id="btn-ejemplo-pre" type="button">Ejemplo pre-estirado (18*09*2.5)</button>
+              <button class="btn btn-secondary" id="btn-ejemplo-auto" type="button">Ejemplo automático (20*17*12.0)</button>
+              <button class="btn btn-secondary" id="btn-ejemplo-color" type="button">Ejemplo color negro (20*20*2.2)</button>
+            </div>
+          </form>
         </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="fecha_fabricacion">Fecha fabricación</label>
-            <input id="fecha_fabricacion" name="fecha_fabricacion" type="date" required>
-          </div>
-          <div class="field">
-            <label for="fecha_emision">Fecha emisión</label>
-            <input id="fecha_emision" name="fecha_emision" type="date">
-          </div>
-          <div class="field">
-            <label for="tipo">Tipo producto</label>
-            <select id="tipo" name="tipo">
-              <option value="MANUAL">Manual</option>
-              <option value="PRE-ESTIRADO">Pre-estirado</option>
-              <option value="AUTOMATICO">Automático</option>
-              <option value="MANUAL_COLOR">Manual con color</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="field" id="color-field" hidden>
-          <label>Color del film</label>
-          <input type="hidden" id="color" name="color" value="">
-          <div class="color-switch" role="group" aria-label="Color del film">
-            <button class="color-btn" type="button" data-color="NEGRO">Negro</button>
-            <button class="color-btn" type="button" data-color="ROJO">Rojo</button>
-            <button class="color-btn" type="button" data-color="AZUL">Azul</button>
-            <button class="color-btn" type="button" data-color="VERDE">Verde</button>
-            <button class="color-btn" type="button" data-color="AMARILLO">Amarillo</button>
-          </div>
-          <span class="field-note" id="apariencia-preview"></span>
-        </div>
-
-        <div class="field">
-          <label for="formato_etiqueta">Formato etiqueta (ancho*espesor*peso)</label>
-          <input id="formato_etiqueta" name="formato_etiqueta" type="text" required placeholder="Ej. 18*20*2.0">
-          <span class="field-note">Ej. 18*20*2.0 → 18" ancho, 20 µm, 2.0 kg. Pre-estirado siempre usa 18" y en ancho muestra 420*.</span>
-        </div>
-
-        <div class="field">
-          <label>Nombre de producto generado</label>
-          <output id="producto-preview" class="producto-preview" for="formato_etiqueta tipo color"></output>
-        </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="ancho">Ancho (pulgadas)</label>
-            <input id="ancho" name="ancho" type="number" min="1" max="30" step="0.1" required>
-          </div>
-          <div class="field">
-            <label for="espesor">Espesor (µm)</label>
-            <input id="espesor" name="espesor" type="number" min="1" max="50" step="0.1" required>
-          </div>
-          <div class="field">
-            <label for="peso">Peso (kg)</label>
-            <input id="peso" name="peso" type="number" min="0.1" max="30" step="0.1" required>
-          </div>
-        </div>
-        <p class="field-note medidas-note">Medidas y valor medido del certificado se calculan desde estos datos (mm = pulgadas × 25,4).</p>
-
-        <div class="field">
-          <label for="lote">Lote completo</label>
-          <input id="lote" name="lote" type="text" placeholder="Ej. 040926/R1-2DC">
-          <span class="field-note">Los primeros 6 dígitos (DDMMAA) completan automáticamente la fecha de fabricación y la fecha de emisión (+1 día).</span>
-          <span class="field-note lote-date-status" id="lote-date-status"></span>
-        </div>
-
-        <div class="field">
-          <label for="analista">Analista de calidad</label>
-          <input id="analista" name="analista" type="text" value="Dan Mergildo C.">
-        </div>
-
-        <input id="foto-etiqueta" name="foto-etiqueta" type="file" accept="image/*" hidden>
-
-        <div class="field">
-          <label for="pdf-orientation">Orientación al exportar</label>
-          <select id="pdf-orientation" name="pdf_orientation">
-            <option value="portrait" selected>Vertical (predeterminado)</option>
-            <option value="landscape">Horizontal</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label>Nombre del PDF</label>
-          <output id="pdf-name-preview" class="pdf-name-preview" for="cliente fecha_fabricacion tipo formato_etiqueta color"></output>
-        </div>
-
-        <div class="actions">
-          <button class="btn btn-secondary" id="btn-ejemplo" type="button">Cargar ejemplo INSUPACK (18*20*2.0)</button>
-          <button class="btn btn-secondary" id="btn-ejemplo-pre" type="button">Ejemplo pre-estirado (18*09*2.5)</button>
-          <button class="btn btn-secondary" id="btn-ejemplo-auto" type="button">Ejemplo automático (20*17*12.0)</button>
-          <button class="btn btn-secondary" id="btn-ejemplo-color" type="button">Ejemplo color negro (20*20*2.2)</button>
-          <button class="btn btn-primary" id="btn-pdf" type="button">Guardar PDF…</button>
-          <button class="btn btn-secondary" id="btn-print" type="button">Imprimir</button>
-          <p class="field-note pdf-export-status" id="pdf-export-status" role="status" aria-live="polite"></p>
-        </div>
-      </form>
+      </details>
     </aside>
 
     <main class="panel-preview">
