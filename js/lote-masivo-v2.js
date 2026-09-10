@@ -1,4 +1,4 @@
-// SAMPLAST - Corrección final de carga masiva por tipo de producto.
+// SAMPLAST - Carga masiva por tipo de producto.
 (() => {
   "use strict";
 
@@ -56,14 +56,29 @@
   }
   function fmtDate(iso) { if(!iso) return ""; const [y,m,d]=iso.split("-"); return `${d}/${m}/${y}`; }
 
+  function numberFromText(value) {
+    const match = String(value ?? "").replace(",", ".").match(/\d+(?:\.\d+)?/);
+    return match ? Number(match[0]) : NaN;
+  }
+
   function explicitMeasures(raw) {
-    const fmt=String(raw?.formato_etiqueta ?? raw?.formato ?? "").trim();
+    const fmt=String(raw?.formato_etiqueta ?? raw?.formato ?? raw?.medidas ?? raw?.especificacion ?? "").trim();
     if (fmt) {
-      const p=fmt.split(/[xX*×]/).map(s=>s.trim()).filter(Boolean);
-      if (p.length===3 && p.every(n=>Number.isFinite(+n) && +n>0)) return {ancho:String(+p[0]),espesor:String(+p[1]),peso:(+p[2]).toFixed(1),formato:`${+p[0]}*${+p[1]}*${(+p[2]).toFixed(1)}`};
+      const normalized = fmt
+        .toUpperCase()
+        .replace(/PULGADAS?|PULG|INCH(?:ES)?/g, "")
+        .replace(/MICRAS?|MICR(?:ON|ONES)?|MC|UM|µM/g, "")
+        .replace(/KILOGRAMOS?|KILOS?|KG/g, "")
+        .replace(/[\"']/g, "")
+        .replace(/,/g, ".");
+      const p=normalized.split(/[xX*×]/).map(s=>numberFromText(s)).filter(n=>Number.isFinite(n));
+      if (p.length>=3 && p.slice(0,3).every(n=>n>0)) {
+        const [a,e,w]=p;
+        return {ancho:String(a),espesor:String(e),peso:w.toFixed(1),formato:`${a}*${e}*${w.toFixed(1)}`};
+      }
     }
-    const a=raw?.ancho ?? raw?.ancho_pulg, e=raw?.espesor ?? raw?.espesor_micras, p=raw?.peso ?? raw?.peso_kg;
-    if ([a,e,p].every(n=>Number.isFinite(+n) && +n>0)) return {ancho:String(+a),espesor:String(+e),peso:(+p).toFixed(1),formato:`${+a}*${+e}*${(+p).toFixed(1)}`};
+    const a=numberFromText(raw?.ancho ?? raw?.ancho_pulg), e=numberFromText(raw?.espesor ?? raw?.espesor_micras), p=numberFromText(raw?.peso ?? raw?.peso_kg);
+    if ([a,e,p].every(n=>Number.isFinite(n) && n>0)) return {ancho:String(a),espesor:String(e),peso:p.toFixed(1),formato:`${a}*${e}*${p.toFixed(1)}`};
     return null;
   }
 
@@ -84,15 +99,41 @@
     const lote=normLote(raw?.lote ?? raw?.lote_raw ?? "");
     const tipo=normTipo(raw?.tipo ?? raw?.categoria ?? raw?.tipo_producto ?? "") || inferTipo(codigo);
     const color=String(raw?.color || "").trim().toUpperCase();
-    if (!cliente || !codigo || !lote) return {cliente,tipo,codigo,lote,error:"Falta CLIENTE, CODIGO o LOTE",source};
+    const measures=explicitMeasures(raw);
+
+    if (!cliente || !lote) return {cliente,tipo,codigo,lote,error:"Falta CLIENTE o LOTE",source};
     if (!tipo || tipo==="REVISAR") return {cliente,tipo:tipo||"REVISAR",codigo,lote,error:"Falta identificar el TIPO de producto. Revise la etiqueta.",source};
     if (!VALID_TYPES.has(tipo)) return {cliente,tipo,codigo,lote,error:`Tipo no reconocido: ${tipo}`,source};
     if (tipo==="MANUAL_COLOR" && !VALID_COLORS.has(color)) return {cliente,tipo,color,codigo,lote,error:"MANUAL_COLOR requiere un color válido.",source};
-    const decoded=decode(codigo,tipo), measures=explicitMeasures(raw) || (!decoded.error ? decoded : null);
-    if (!measures) return {cliente,tipo,color,codigo,lote,error:`${decoded.error}. Si el código es especial, incluya ancho, espesor y peso en el JSON.`,source};
+
+    if (tipo==="PRE-ESTIRADO") {
+      if (!measures) return {cliente,tipo,color,codigo,lote,error:"PRE-ESTIRADO requiere las medidas de la etiqueta (por ejemplo 18*09*2.50). No necesita CODIGO.",source};
+      if (Number(measures.ancho)!==18) return {cliente,tipo,color,codigo,lote,error:`PRE-ESTIRADO debe usar 18 pulgadas; recibido: ${measures.ancho}`,source};
+    } else if (!codigo) {
+      return {cliente,tipo,color,codigo,lote,error:`${tipo} requiere CODIGO de producción.`,source};
+    }
+
+    const decoded=codigo ? decode(codigo,tipo) : {error:"Sin código"};
+    const finalMeasures=measures || (!decoded.error ? decoded : null);
+    if (!finalMeasures) return {cliente,tipo,color,codigo,lote,error:`${decoded.error}. Si el código es especial, incluya ancho, espesor y peso en el JSON.`,source};
+
     const fechaFab=parseDate(lote);
     if (!fechaFab) return {cliente,tipo,color,codigo,lote,error:`No se pudo obtener una fecha DDMMAA válida desde ${lote}`,source};
-    return {cliente,tipo,color:VALID_COLORS.has(color)?color:"",codigo:decoded.codigo||codigo,lote,ancho:measures.ancho,espesor:measures.espesor,peso:measures.peso,formato:measures.formato,fechaFab,fechaEmision:addDay(fechaFab),error:"",source};
+    return {
+      cliente,
+      tipo,
+      color:VALID_COLORS.has(color)?color:"",
+      codigo:codigo || "",
+      lote,
+      ancho:finalMeasures.ancho,
+      espesor:finalMeasures.espesor,
+      peso:finalMeasures.peso,
+      formato:finalMeasures.formato,
+      fechaFab,
+      fechaEmision:addDay(fechaFab),
+      error:"",
+      source
+    };
   }
 
   function parseInput(text) {
@@ -104,9 +145,10 @@
     }
     return t.split(/\r?\n/).map(x=>x.trim()).filter(Boolean).map(line=>{
       const p=line.replace(/^[-•]\s*/,"").split("|").map(x=>x.trim());
-      if(p.length>=4) return normalizeRow({cliente:p[0],tipo:p[1],codigo:p[2],lote:p.slice(3).join("|")},line);
+      if(p.length>=5) return normalizeRow({cliente:p[0],tipo:p[1],codigo:p[2],formato:p[3],lote:p.slice(4).join("|")},line);
+      if(p.length===4) return normalizeRow({cliente:p[0],tipo:p[1],codigo:p[2],lote:p[3]},line);
       if(p.length===3) return normalizeRow({cliente:p[0],codigo:p[1],lote:p[2]},line);
-      return {cliente:p[0]||"",tipo:"",codigo:p[1]||"",lote:p[2]||"",error:"Formato esperado: CLIENTE | TIPO | CODIGO | LOTE",source:line};
+      return {cliente:p[0]||"",tipo:"",codigo:p[1]||"",lote:p[2]||"",error:"Use JSON o CLIENTE | TIPO | CODIGO | LOTE",source:line};
     });
   }
 
@@ -119,7 +161,7 @@
   function renderTable() {
     if(!bulkTableContainer) return;
     if(!batchItems.length){bulkTableContainer.hidden=true;bulkTableContainer.innerHTML="";return;}
-    const rows=batchItems.map((x,i)=>`<tr class="${x.error?"has-error":""}"><td>${i+1}</td><td>${esc(x.cliente)}</td><td>${esc(x.tipo||"REVISAR")}</td><td><code>${esc(x.codigo)}</code></td><td><code>${esc(x.lote)}</code></td><td>${x.error?"—":esc(fmtDate(x.fechaFab))}</td><td>${x.error?"—":`${esc(x.ancho)}\" · ${esc(x.espesor)} µm · ${esc(x.peso)} kg`}</td><td>${x.error?`<span class="bulk-row-error">${esc(x.error)}</span>`:'<span class="bulk-row-ok">Listo</span>'}</td><td>${x.error?"":`<button type="button" class="bulk-row-load" data-index="${i}">Ver</button>`}</td></tr>`).join("");
+    const rows=batchItems.map((x,i)=>`<tr class="${x.error?"has-error":""}"><td>${i+1}</td><td>${esc(x.cliente)}</td><td>${esc(x.tipo||"REVISAR")}</td><td><code>${esc(x.codigo || (x.tipo==="PRE-ESTIRADO"?"No aplica":""))}</code></td><td><code>${esc(x.lote)}</code></td><td>${x.error?"—":esc(fmtDate(x.fechaFab))}</td><td>${x.error?"—":`${esc(x.ancho)}\" · ${esc(x.espesor)} µm · ${esc(x.peso)} kg`}</td><td>${x.error?`<span class="bulk-row-error">${esc(x.error)}</span>`:'<span class="bulk-row-ok">Listo</span>'}</td><td>${x.error?"":`<button type="button" class="bulk-row-load" data-index="${i}">Ver</button>`}</td></tr>`).join("");
     bulkTableContainer.innerHTML=`<table class="bulk-table"><thead><tr><th>#</th><th>Cliente</th><th>Tipo</th><th>Código</th><th>Lote</th><th>Fabricación</th><th>Producto</th><th>Estado</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
     bulkTableContainer.hidden=false;
     bulkTableContainer.querySelectorAll(".bulk-row-load").forEach(b=>b.addEventListener("click",e=>{e.stopImmediatePropagation();const x=batchItems[+b.dataset.index];if(x&&!x.error) loadItem(x);}));
@@ -145,12 +187,12 @@
 
   function loadAll(e){e.preventDefault();e.stopImmediatePropagation();try{batchItems=parseInput(bulkInput.value);renderTable();setButtons();if(!batchItems.length){status("Pegue al menos un certificado.",true);return;}const errors=batchItems.filter(x=>x.error);if(errors.length){status(`${batchItems.length-errors.length} listos y ${errors.length} con error. Corrija los registros marcados.`,true);return;}loadItem(batchItems[0]);status(`${batchItems.length} certificados listos. Revise la columna Tipo antes de imprimir.`);}catch(err){batchItems=[];renderTable();setButtons();status(err.message||"No se pudo interpretar el JSON.",true);}}
 
-  bulkInput.placeholder='[{"cliente":"INDUSTRIAS DEL PAPEL S.A.","tipo":"MANUAL","codigo":"2012C030TD","lote":"080926/R1-1DC"},{"cliente":"BIIPLAST","tipo":"AUTOMATICO","codigo":"2014C0160TG","lote":"270626/E4-2RQ"}]';
-  const help=document.querySelector(".bulk-help");if(help)help.innerHTML='Pegue el JSON generado por la IA. Cada registro debe incluir <strong>cliente, tipo, codigo y lote</strong>. Se respetan MANUAL, AUTOMATICO, PRE-ESTIRADO y MANUAL_COLOR.';
+  bulkInput.placeholder='[{"cliente":"INDUSTRIAS DEL PAPEL S.A.","tipo":"MANUAL","codigo":"2012C030TD","lote":"080926/R1-1DC"},{"cliente":"ALIMENTOS CIELO SOCIEDAD ANONIMA CERRADA - ALI CI S.A.C.","tipo":"PRE-ESTIRADO","codigo":"","formato":"18*09*2.50","lote":"080826/R5-1JC"}]';
+  const help=document.querySelector(".bulk-help");if(help)help.innerHTML='Pegue el JSON generado por la IA. MANUAL y AUTOMATICO usan <strong>codigo</strong>. PRE-ESTIRADO usa <strong>formato</strong> (por ejemplo 18*09*2.50) y no necesita código de producción.';
 
   btnLoad.addEventListener("click",loadAll,true);
   btnPrint?.addEventListener("click",printAll,true);
   btnPdf?.addEventListener("click",pdfAll,true);
 
-  window.SamplastLotesV2={parseInput,decode,normTipo,inferTipo};
+  window.SamplastLotesV2={parseInput,decode,normTipo,inferTipo,explicitMeasures};
 })();
