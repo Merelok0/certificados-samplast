@@ -10,6 +10,21 @@
     { cliente: "BIIPLAST", corto: "BIIPLAST" },
   ];
 
+  // Conserva una copia limpia de la base original. Los clientes personalizados
+  // se incorporan a CLIENTES_DB en memoria para que el generador de nombres PDF
+  // use exactamente el "corto" definido desde Administrar clientes.
+  const BASE_CLIENTS_SNAPSHOT = (() => {
+    try {
+      if (typeof CLIENTES_DB === "undefined" || !Array.isArray(CLIENTES_DB)) return [];
+      return CLIENTES_DB.map(x => ({
+        cliente: String(x?.cliente || "").trim(),
+        corto: String(x?.corto || "").trim()
+      })).filter(x => x.cliente);
+    } catch (_) {
+      return [];
+    }
+  })();
+
   const promptText = document.getElementById("ia-prompt-text");
   const promptCount = document.getElementById("ia-prompt-client-count");
   const copyPromptBtn = document.getElementById("btn-copy-ia-prompt");
@@ -24,36 +39,94 @@
   function normalizeKey(value) {
     return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]/g, "");
   }
+
+  function loadCustomClients() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      return Array.isArray(parsed)
+        ? parsed.map(x => ({
+            cliente: String(x?.cliente || "").trim(),
+            corto: String(x?.corto || "").trim().toUpperCase(),
+            origen: "personalizado"
+          })).filter(x => x.cliente)
+        : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveCustomClients(items) {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(items.map(({ cliente, corto }) => ({ cliente, corto })))
+    );
+  }
+
+  function syncAppClientDb() {
+    try {
+      if (typeof CLIENTES_DB === "undefined" || !Array.isArray(CLIENTES_DB)) return;
+      const seen = new Set();
+      const merged = [...BASE_CLIENTS_SNAPSHOT, ...DEFAULT_EXTRA_CLIENTS, ...loadCustomClients()]
+        .map(x => ({
+          cliente: String(x?.cliente || "").trim(),
+          corto: String(x?.corto || "").trim().toUpperCase()
+        }))
+        .filter(x => {
+          const key = normalizeKey(x.cliente);
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      CLIENTES_DB.splice(0, CLIENTES_DB.length, ...merged);
+    } catch (_) {
+      // Si la base principal no está disponible, el administrador local sigue funcionando.
+    }
+  }
+
   function safeBaseClients() {
     try {
       const base = typeof CLIENTES_DB !== "undefined" && Array.isArray(CLIENTES_DB) ? CLIENTES_DB : [];
-      return [...base, ...DEFAULT_EXTRA_CLIENTS].map(x => ({ cliente: String(x?.cliente || "").trim(), corto: String(x?.corto || "").trim(), origen: "base" })).filter(x => x.cliente);
+      return base.map(x => ({
+        cliente: String(x?.cliente || "").trim(),
+        corto: String(x?.corto || "").trim(),
+        origen: "base"
+      })).filter(x => x.cliente);
     } catch (_) {
       return DEFAULT_EXTRA_CLIENTS.map(x => ({ ...x, origen: "base" }));
     }
   }
-  function loadCustomClients() {
-    try {
-      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      return Array.isArray(parsed) ? parsed.map(x => ({ cliente: String(x?.cliente || "").trim(), corto: String(x?.corto || "").trim(), origen: "personalizado" })).filter(x => x.cliente) : [];
-    } catch (_) { return []; }
-  }
-  function saveCustomClients(items) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items.map(({ cliente, corto }) => ({ cliente, corto }))));
-  }
+
   function getAllClients() {
     const seen = new Set();
     return [...safeBaseClients(), ...loadCustomClients()].filter(x => {
-      const key = normalizeKey(x.cliente); if (!key || seen.has(key)) return false; seen.add(key); return true;
+      const key = normalizeKey(x.cliente);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
     }).sort((a,b) => a.cliente.localeCompare(b.cliente, "es", { sensitivity: "base" }));
   }
+
+  function getShortName(cliente) {
+    const key = normalizeKey(cliente);
+    if (!key) return "";
+    const item = getAllClients().find(x => normalizeKey(x.cliente) === key);
+    return String(item?.corto || "").trim().toUpperCase();
+  }
+
   function escapeHtml(value) {
     return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#039;");
   }
+
   function refreshDatalist() {
-    const datalist = document.getElementById("clientes-list"); if (!datalist) return;
+    const datalist = document.getElementById("clientes-list");
+    if (!datalist) return;
     datalist.innerHTML = "";
-    getAllClients().forEach(item => { const option = document.createElement("option"); option.value = item.cliente; if (item.corto) option.label = item.corto; datalist.appendChild(option); });
+    getAllClients().forEach(item => {
+      const option = document.createElement("option");
+      option.value = item.cliente;
+      if (item.corto) option.label = item.corto;
+      datalist.appendChild(option);
+    });
   }
 
   function buildPrompt() {
@@ -64,41 +137,122 @@
 
   function refreshPrompt() {
     if (promptText) promptText.value = buildPrompt();
-    const total = getAllClients().length; if (promptCount) promptCount.textContent = String(total); if (totalClientsEl) totalClientsEl.textContent = String(total);
+    const total = getAllClients().length;
+    if (promptCount) promptCount.textContent = String(total);
+    if (totalClientsEl) totalClientsEl.textContent = String(total);
   }
-  function setClientStatus(message, error=false) {
-    if (!clientsStatus) return; clientsStatus.textContent = message; clientsStatus.classList.toggle("is-error", error); clientsStatus.classList.toggle("is-ok", !!message && !error);
-  }
-  function renderCustomClients() {
-    if (!customClientsList) return; const custom = loadCustomClients();
-    if (!custom.length) { customClientsList.innerHTML = '<p class="clientes-empty">Todavía no ha añadido clientes nuevos en este navegador.</p>'; return; }
-    customClientsList.innerHTML = custom.map((x,i) => `<div class="cliente-custom-row"><div><strong>${escapeHtml(x.cliente)}</strong>${x.corto ? `<span>${escapeHtml(x.corto)}</span>` : ""}</div><button type="button" class="cliente-delete-btn" data-index="${i}">Eliminar</button></div>`).join("");
-    customClientsList.querySelectorAll(".cliente-delete-btn").forEach(btn => btn.addEventListener("click", () => { const items=loadCustomClients(), i=+btn.dataset.index, removed=items[i]; if(!removed)return; items.splice(i,1); saveCustomClients(items); refreshAll(); setClientStatus(`Cliente eliminado: ${removed.cliente}`); }));
-  }
-  function addClient() {
-    const cliente=String(clientNameInput?.value||"").trim(), corto=String(clientShortInput?.value||"").trim().toUpperCase();
-    if(!cliente){setClientStatus("Escriba el nombre del cliente.",true);clientNameInput?.focus();return;}
-    if(getAllClients().some(x=>normalizeKey(x.cliente)===normalizeKey(cliente))){setClientStatus("Ese cliente ya existe en la base actual.",true);return;}
-    const custom=loadCustomClients();custom.push({cliente,corto,origen:"personalizado"});saveCustomClients(custom);if(clientNameInput)clientNameInput.value="";if(clientShortInput)clientShortInput.value="";refreshAll();setClientStatus(`Cliente añadido: ${cliente}. Ya aparece en el autocompletado y en el instructivo para IA.`);
-  }
-  async function copyPrompt() {
-    const text=buildPrompt();
-    try{await navigator.clipboard.writeText(text);if(copyPromptStatus)copyPromptStatus.textContent=`Instructivo copiado completo con ${getAllClients().length} clientes.`;}
-    catch(_){if(promptText){promptText.focus();promptText.select();document.execCommand("copy");if(copyPromptStatus)copyPromptStatus.textContent="Instructivo seleccionado. Si la copia automática fue bloqueada, use Ctrl+C.";}}
-  }
-  function refreshAll(){refreshDatalist();renderCustomClients();refreshPrompt();}
 
-  addClientBtn?.addEventListener("click",addClient);
-  clientNameInput?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addClient();}});
-  clientShortInput?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addClient();}});
-  copyPromptBtn?.addEventListener("click",copyPrompt);
+  function setClientStatus(message, error=false) {
+    if (!clientsStatus) return;
+    clientsStatus.textContent = message;
+    clientsStatus.classList.toggle("is-error", error);
+    clientsStatus.classList.toggle("is-ok", !!message && !error);
+  }
+
+  function renderCustomClients() {
+    if (!customClientsList) return;
+    const custom = loadCustomClients();
+    if (!custom.length) {
+      customClientsList.innerHTML = '<p class="clientes-empty">Todavía no ha añadido clientes nuevos en este navegador.</p>';
+      return;
+    }
+    customClientsList.innerHTML = custom.map((x,i) =>
+      `<div class="cliente-custom-row"><div><strong>${escapeHtml(x.cliente)}</strong>${x.corto ? `<span>${escapeHtml(x.corto)}</span>` : ""}</div><button type="button" class="cliente-delete-btn" data-index="${i}">Eliminar</button></div>`
+    ).join("");
+    customClientsList.querySelectorAll(".cliente-delete-btn").forEach(btn => btn.addEventListener("click", () => {
+      const items = loadCustomClients();
+      const i = +btn.dataset.index;
+      const removed = items[i];
+      if (!removed) return;
+      items.splice(i,1);
+      saveCustomClients(items);
+      refreshAll();
+      setClientStatus(`Cliente eliminado: ${removed.cliente}`);
+    }));
+  }
+
+  function addClient() {
+    const cliente = String(clientNameInput?.value || "").trim();
+    const corto = String(clientShortInput?.value || "").trim().toUpperCase();
+
+    if (!cliente) {
+      setClientStatus("Escriba el nombre del cliente.", true);
+      clientNameInput?.focus();
+      return;
+    }
+    if (!corto) {
+      setClientStatus("Escriba el nombre corto que se usará en el PDF.", true);
+      clientShortInput?.focus();
+      return;
+    }
+    if (getAllClients().some(x => normalizeKey(x.cliente) === normalizeKey(cliente))) {
+      setClientStatus("Ese cliente ya existe en la base actual.", true);
+      return;
+    }
+
+    const custom = loadCustomClients();
+    custom.push({ cliente, corto, origen: "personalizado" });
+    saveCustomClients(custom);
+    if (clientNameInput) clientNameInput.value = "";
+    if (clientShortInput) clientShortInput.value = "";
+    refreshAll();
+    setClientStatus(`Cliente añadido: ${cliente} · Nombre corto: ${corto}`);
+  }
+
+  async function copyPrompt() {
+    const text = buildPrompt();
+    try {
+      await navigator.clipboard.writeText(text);
+      if (copyPromptStatus) copyPromptStatus.textContent = `Instructivo copiado completo con ${getAllClients().length} clientes.`;
+    } catch (_) {
+      if (promptText) {
+        promptText.focus();
+        promptText.select();
+        document.execCommand("copy");
+        if (copyPromptStatus) copyPromptStatus.textContent = "Instructivo seleccionado. Si la copia automática fue bloqueada, use Ctrl+C.";
+      }
+    }
+  }
+
+  function refreshAll() {
+    syncAppClientDb();
+    refreshDatalist();
+    renderCustomClients();
+    refreshPrompt();
+    if (typeof window.updatePreview === "function") window.updatePreview();
+  }
+
+  addClientBtn?.addEventListener("click", addClient);
+  clientNameInput?.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addClient();
+    }
+  });
+  clientShortInput?.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addClient();
+    }
+  });
+  copyPromptBtn?.addEventListener("click", copyPrompt);
   refreshAll();
 
-  function loadBatchV2(){
-    if(document.querySelector('script[data-samplast-lotes-v2]')) return;
-    const script=document.createElement("script"); script.src="js/lote-masivo-v2.js?v=final-20260910-1"; script.dataset.samplastLotesV2="1"; document.body.appendChild(script);
+  function loadBatchV2() {
+    if (document.querySelector('script[data-samplast-lotes-v2]')) return;
+    const script = document.createElement("script");
+    script.src = "js/lote-masivo-v3.js?v=final-20260910-2";
+    script.dataset.samplastLotesV2 = "1";
+    document.body.appendChild(script);
   }
-  if(document.readyState==="loading") window.addEventListener("DOMContentLoaded",loadBatchV2,{once:true}); else loadBatchV2();
+  if (document.readyState === "loading") window.addEventListener("DOMContentLoaded", loadBatchV2, {once:true});
+  else loadBatchV2();
 
-  window.SamplastClientes={getAll:getAllClients,getCustom:loadCustomClients,refresh:refreshAll,buildPrompt};
+  window.SamplastClientes = {
+    getAll: getAllClients,
+    getCustom: loadCustomClients,
+    getShort: getShortName,
+    refresh: refreshAll,
+    buildPrompt
+  };
 })();
