@@ -7,45 +7,48 @@ INSTRUCTIVO PARA TRANSCRIPCIÓN CON IA
 
 Use siempre esa versión porque se actualiza automáticamente con la lista actual de clientes.
 
-FORMATO DE SALIDA VIGENTE
--------------------------
-La IA debe devolver únicamente JSON válido y debe conservar el TIPO REAL de cada etiqueta:
+REGLAS IMPORTANTES
+------------------
+1. Devuelva únicamente JSON válido.
+2. Debe existir un objeto por cada etiqueta física.
+3. No asumir MANUAL para todas las etiquetas.
+4. STFM / STMF / STF MANUAL -> MANUAL.
+5. AUTOMATICO / AUTOMÁTICO -> AUTOMATICO.
+6. PRE-ESTIRADO -> PRE-ESTIRADO.
+7. STF NEGRO / ROJO / AZUL / VERDE / AMARILLO -> MANUAL_COLOR y completar color.
 
+CODIGO TECNICO VS CODIGO SAP
+-----------------------------
+Los códigos técnicos SAMPLAST como 2012C030TD, 1812C029TD o 2014C0160TG sí se colocan en "codigo".
+
+Los códigos SAP como P00447, P00651, etc. NO se usan para generar el certificado.
+Si la etiqueta trae CODIGO SAP y además imprime directamente las medidas, ignore el SAP, deje "codigo" vacío y coloque las medidas en "formato".
+
+Ejemplo ANTALIS:
+Etiqueta: STF MANUAL 06", 06" x 20 x 0.60 KG, CODIGO SAP P00447, LT:140926/R6-1JC
+Salida:
+{"cliente":"ANTALIS TFM S.A.","tipo":"MANUAL","color":"","codigo":"","formato":"06*20*0.60","lote":"140926/R6-1JC"}
+
+Etiqueta: STF NEGRO 09", 09" x 20 x 1.00 KG, CODIGO SAP P00651, LT:140926/R6-1JC
+Salida:
+{"cliente":"ANTALIS TFM S.A.","tipo":"MANUAL_COLOR","color":"NEGRO","codigo":"","formato":"09*20*1.00","lote":"140926/R6-1JC"}
+
+PRE-ESTIRADO
+-------------
+Puede no tener código técnico. Lea las medidas impresas y colóquelas en "formato".
+Ejemplo: 18" X 09 MC X 2.50 KG -> "formato":"18*09*2.50" y "codigo":"".
+
+FORMATO GENERAL
+---------------
 [
   {
     "cliente": "NOMBRE DEL CLIENTE",
     "tipo": "MANUAL",
     "color": "",
     "codigo": "2012C030TD",
+    "formato": "",
     "lote": "080926/R1-1DC"
   }
 ]
 
-Valores admitidos para tipo:
-- MANUAL
-- AUTOMATICO
-- PRE-ESTIRADO
-- MANUAL_COLOR
-- REVISAR, si la categoría no puede determinarse con seguridad
-
-REGLA CRÍTICA
---------------
-NO asumir MANUAL para todas las etiquetas.
-
-- STFM / STMF sin otra categoría -> MANUAL
-- Si la etiqueta dice AUTOMATICO / AUTOMÁTICO -> AUTOMATICO
-- Si dice PRE-ESTIRADO / PRE ESTIRADO / PREESTIRADO -> PRE-ESTIRADO
-- Si corresponde a film manual de color -> MANUAL_COLOR y completar color
-- Si no puede determinarse el tipo -> REVISAR
-
-Un mismo cliente puede tener etiquetas de tipos diferentes en la misma captura.
-
-EJEMPLO MIXTO
--------------
-[
-  {"cliente":"INDUSTRIAS DEL PAPEL S.A.","tipo":"MANUAL","color":"","codigo":"2012C030TD","lote":"080926/R1-1DC"},
-  {"cliente":"BIIPLAST","tipo":"AUTOMATICO","color":"","codigo":"2014C0160TG","lote":"270626/E4-2RQ"},
-  {"cliente":"BIIPLAST","tipo":"MANUAL","color":"","codigo":"2012C014TD","lote":"080926/R1-2IS"}
-]
-
-La página SAMPLAST calcula automáticamente características del producto y fechas a partir del código y lote cuando el patrón está reconocido.
+La página calcula automáticamente las fechas desde los primeros seis dígitos del lote (DDMMAA).
