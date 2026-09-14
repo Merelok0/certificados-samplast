@@ -54,11 +54,11 @@
   function normTipo(v) {
     const x = normalizeText(v).replace(/_/g,"-").replace(/\s+/g," ");
     if (!x) return "";
+    if (["MANUAL COLOR","MANUAL-COLOR","MANUAL CON COLOR","COLOR"].includes(x)) return "MANUAL_COLOR";
     if (/^STF\s+(NEGRO|ROJO|AZUL|VERDE|AMARILLO)\b/.test(x)) return "MANUAL_COLOR";
-    if (["MANUAL","STFM","STMF","STF MANUAL","STRETCH FILM MANUAL"].includes(x) || /\bMANUAL\b/.test(x)) return "MANUAL";
     if (["AUTOMATICO","AUTOMATICA","AUTOMATIC","STRETCH FILM AUTOMATICO"].includes(x) || /\bAUTOMATICO\b/.test(x)) return "AUTOMATICO";
     if (["PRE-ESTIRADO","PRE ESTIRADO","PREESTIRADO","PRE-STRETCHED","PRESTRETCH"].includes(x) || /PRE[- ]?ESTIRADO/.test(x)) return "PRE-ESTIRADO";
-    if (["MANUAL COLOR","MANUAL-COLOR","MANUAL CON COLOR","COLOR"].includes(x)) return "MANUAL_COLOR";
+    if (["MANUAL","STFM","STMF","STF MANUAL","STRETCH FILM MANUAL"].includes(x) || /\bMANUAL\b/.test(x)) return "MANUAL";
     if (["REVISAR","REVISAR TIPO","REVISAR-TIPO"].includes(x)) return "REVISAR";
     return x.replace(/ /g,"-");
   }
@@ -173,8 +173,6 @@
     let measures = explicit;
     let decoded = null;
 
-    // Si la etiqueta imprime directamente ancho × espesor × peso, esas medidas mandan.
-    // Esto cubre etiquetas especiales como ANTALIS. Un CODIGO SAP tipo P00447 no se usa.
     if (!measures && codigo && codigo !== "REVISAR") {
       decoded = decodeCodigo(codigo);
       if (!decoded.error) measures = decoded;
