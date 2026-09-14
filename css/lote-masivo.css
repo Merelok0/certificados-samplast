@@ -58,7 +58,7 @@
 
 .bulk-actions {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-top: 8px;
 }
@@ -76,15 +76,8 @@
   color: #64748b;
 }
 
-.bulk-status.is-ok {
-  color: #166534;
-  font-weight: 600;
-}
-
-.bulk-status.is-error {
-  color: #b91c1c;
-  font-weight: 600;
-}
+.bulk-status.is-ok { color: #166534; font-weight: 600; }
+.bulk-status.is-error { color: #b91c1c; font-weight: 600; }
 
 .bulk-table-wrap {
   margin-top: 9px;
@@ -122,18 +115,10 @@
 
 .bulk-table tr:last-child td { border-bottom: 0; }
 .bulk-table tr.has-error td { background: #fffafa; }
-
-.bulk-table code {
-  font-family: Consolas, "Courier New", monospace;
-  white-space: nowrap;
-}
-
+.bulk-table code { font-family: Consolas, "Courier New", monospace; white-space: nowrap; }
 .bulk-row-ok { color: #166534; font-weight: 700; }
 .bulk-row-error { color: #b91c1c; font-weight: 700; }
-
-.bulk-row-actions {
-  white-space: nowrap;
-}
+.bulk-row-actions { white-space: nowrap; }
 
 .bulk-row-load,
 .bulk-row-delete {
@@ -145,18 +130,13 @@
   font-size: inherit;
 }
 
-.bulk-row-load {
-  background: #e8edf2;
-  color: #1f2937;
-}
-
+.bulk-row-load { background: #e8edf2; color: #1f2937; }
 .bulk-row-delete {
   margin-left: 4px;
   background: #fff;
   color: #b91c1c;
   border-color: #e4b4b4;
 }
-
 .bulk-row-delete:hover { background: #fff5f5; }
 
 .current-cert-actions {
@@ -188,13 +168,8 @@
   min-height: 1em;
 }
 
-.individual-panel {
-  margin: 0 0 14px;
-}
-
-.individual-panel .tool-panel-content {
-  padding-top: 12px;
-}
+.individual-panel { margin: 0 0 14px; }
+.individual-panel .tool-panel-content { padding-top: 12px; }
 
 .mode-divider {
   display: flex;
@@ -216,31 +191,15 @@
   background: #d5dbe3;
 }
 
-.lote-date-status {
-  color: #166534;
-  font-weight: 600;
-}
-
+.lote-date-status { color: #166534; font-weight: 600; }
 .lote-date-status.is-error { color: #b91c1c; }
 
-#batch-print-root {
-  display: none;
-  background: #fff;
-}
-
-#batch-print-root .batch-cert-page {
-  break-after: page;
-  page-break-after: always;
-}
-
-#batch-print-root .batch-cert-page:last-child {
-  break-after: auto;
-  page-break-after: auto;
-}
+#batch-print-root { display: none; background: #fff; }
+#batch-print-root .batch-cert-page { break-after: page; page-break-after: always; }
+#batch-print-root .batch-cert-page:last-child { break-after: auto; page-break-after: auto; }
 
 body.batch-pdf-mode { background: #fff; }
 body.batch-pdf-mode .app { display: none !important; }
-
 body.batch-pdf-mode #batch-print-root {
   display: block !important;
   width: 210mm;
@@ -248,7 +207,6 @@ body.batch-pdf-mode #batch-print-root {
   padding: 0;
   background: #fff;
 }
-
 body.batch-pdf-mode #batch-print-root .cert-page {
   width: 210mm !important;
   min-width: 210mm !important;
@@ -270,10 +228,7 @@ body.batch-pdf-mode #batch-print-root .cert-page {
   }
 }
 
-@media (min-width: 560px) and (max-width: 1100px) {
-  .bulk-actions { grid-template-columns: repeat(3, 1fr); }
-}
-
 @media (max-width: 480px) {
   .current-cert-buttons { grid-template-columns: 1fr; }
+  .bulk-actions .btn { font-size: 0.72rem; padding-left: 6px; padding-right: 6px; }
 }
