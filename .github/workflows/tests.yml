@@ -1,0 +1,30 @@
+name: Validar SAMPLAST
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@v4
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verificar sintaxis
+        run: |
+          node --check js/app.js
+          node --check js/lote-masivo-v4.js
+          node --check js/clientes-admin-v2.js
+          node --check js/pdf-nombre-clientes.js
+      - name: Ejecutar pruebas de regresión
+        run: node --test tests/etapa1.test.cjs

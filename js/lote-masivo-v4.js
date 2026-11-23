@@ -8,6 +8,8 @@
   };
   const VALID_TYPES = new Set(["MANUAL","AUTOMATICO","PRE-ESTIRADO","MANUAL_COLOR"]);
   const VALID_COLORS = new Set(["NEGRO","ROJO","AZUL","VERDE","AMARILLO"]);
+  // Solo las letras confirmadas: no se supone un código para AZUL, VERDE o AMARILLO.
+  const TECH_COLOR_LETTERS = Object.freeze({ C:"", N:"NEGRO", R:"ROJO" });
 
   const form = document.getElementById("cert-form");
   const bulkInput = document.getElementById("bulk-input");
@@ -138,18 +140,23 @@
 
   function decodeCodigo(codigo) {
     const c = normCodigo(codigo);
-    const m = c.match(/^(\d{2})(\d{2})C(\d{3,4})([A-Z][A-Z0-9]*)$/i);
+    const m = c.match(/^(\d{2})(\d{2})([A-Z])(\d{3,4})([A-Z][A-Z0-9]*)$/i);
     if (!m) return { error: `Código técnico no reconocido: ${c || "vacío"}` };
+    if (!Object.prototype.hasOwnProperty.call(TECH_COLOR_LETTERS, m[3])) {
+      return { error: `La letra de color "${m[3]}" no está validada en el catálogo técnico. Use medidas explícitas en 'formato' y confirme el color.` };
+    }
     const espesor = MICRON_BY_CODE[m[2]];
     if (!espesor) return { error: `Código de espesor ${m[2]} fuera de tabla 01-22` };
-    const peso = (+m[3] / 10).toFixed(1);
+    const peso = (+m[4] / 10).toFixed(1);
     return {
       codigo: c,
       ancho: m[1],
       espesor,
       peso,
       formato: `${m[1]}*${espesor}*${peso}`,
-      sufijo: m[4]
+      color: TECH_COLOR_LETTERS[m[3]],
+      letraColor: m[3],
+      sufijo: m[5]
     };
   }
 
@@ -161,22 +168,35 @@
     const codigoEsSap = isSapCode(originalCodigo);
     const codigo = codigoEsSap ? "" : originalCodigo;
     const lote = normLote(raw?.lote ?? raw?.lote_raw ?? raw?.lt ?? "");
-    const tipo = normTipo(rawTipo) || inferTipo(codigo);
-    const color = String(raw?.color || detectColor(rawTipo) || "").trim().toUpperCase();
     const explicit = explicitMeasures(raw);
+    const decoded = codigo && codigo !== "REVISAR" ? decodeCodigo(codigo) : null;
+    const rawColor = normalizeText(raw?.color || detectColor(rawTipo) || "");
+    const declaredColor = VALID_COLORS.has(rawColor) ? rawColor : "";
+    const codeColor = decoded && !decoded.error ? decoded.color : "";
+    const color = declaredColor || codeColor;
+    const initialTipo = normTipo(rawTipo) || inferTipo(codigo);
+    // Corrige el caso típico de Gemini: MANUAL + color ROJO sin cambiar datos del producto.
+    const tipo = initialTipo === "MANUAL" && color ? "MANUAL_COLOR" : initialTipo;
 
     if (!cliente || !lote) return { cliente, tipo, color, codigo, codigoSap: codigoSap || (codigoEsSap ? originalCodigo : ""), lote, formatoFuente: explicit?.formato || "", error: "Falta CLIENTE o LOTE", source };
     if (!tipo || tipo === "REVISAR") return { cliente, tipo: tipo || "REVISAR", color, codigo, codigoSap: codigoSap || (codigoEsSap ? originalCodigo : ""), lote, formatoFuente: explicit?.formato || "", error: "Falta identificar el TIPO de producto. Revise la etiqueta.", source };
     if (!VALID_TYPES.has(tipo)) return { cliente, tipo, color, codigo, codigoSap: codigoSap || (codigoEsSap ? originalCodigo : ""), lote, formatoFuente: explicit?.formato || "", error: `Tipo no reconocido: ${tipo}`, source };
     if (tipo === "MANUAL_COLOR" && !VALID_COLORS.has(color)) return { cliente, tipo, color, codigo, codigoSap: codigoSap || (codigoEsSap ? originalCodigo : ""), lote, formatoFuente: explicit?.formato || "", error: "MANUAL_COLOR requiere un color válido.", source };
+    if (color && tipo !== "MANUAL_COLOR") {
+      return { cliente, tipo, color, codigo, codigoSap, lote, formatoFuente: explicit?.formato || "", error: `El tipo ${tipo} no permite color ${color}. Revise el tipo de producto.`, source };
+    }
+    if (rawColor && !VALID_COLORS.has(rawColor) && !["TRANSPARENTE","CRISTAL","NATURAL"].includes(rawColor)) {
+      return { cliente, tipo, color, codigo, codigoSap, lote, formatoFuente: explicit?.formato || "", error: `Color no reconocido: ${rawColor}`, source };
+    }
+    if (codeColor && ["TRANSPARENTE","CRISTAL","NATURAL"].includes(rawColor)) {
+      return { cliente, tipo, color, codigo, codigoSap, lote, formatoFuente: explicit?.formato || "", error: `El código ${codigo} indica ${codeColor}, pero el color declarado es ${rawColor}.`, source };
+    }
+    if (decoded && !decoded.error && declaredColor && declaredColor !== decoded.color) {
+      return { cliente, tipo, color, codigo, codigoSap, lote, formatoFuente: explicit?.formato || "", error: `El color ${declaredColor} contradice el código técnico ${codigo}.`, source };
+    }
 
     let measures = explicit;
-    let decoded = null;
-
-    if (!measures && codigo && codigo !== "REVISAR") {
-      decoded = decodeCodigo(codigo);
-      if (!decoded.error) measures = decoded;
-    }
+    if (!measures && decoded && !decoded.error) measures = decoded;
 
     if (!measures) {
       if (codigoEsSap || codigoSap) {
@@ -522,8 +542,12 @@
         const filename = currentPdfName();
         btnPdf.textContent = `Guardando ${i+1}/${batchItems.length}…`;
         status(`Generando ${i+1} de ${batchItems.length}: ${filename}`);
-        const blob = await currentPdfBlob();
+        window.SamplastPdfProgress?.show?.(`Generando PDF ${i+1} de ${batchItems.length}…`);
+        const blob = window.SamplastPdfProgress?.withTimeout
+          ? await window.SamplastPdfProgress.withTimeout(currentPdfBlob(), 90000)
+          : await currentPdfBlob();
         if (!blob || blob.size < 1000) throw new Error(`El PDF ${i+1} salió vacío.`);
+        window.SamplastPdfProgress?.show?.(`Guardando PDF ${i+1} de ${batchItems.length}…`);
         if (directoryHandle) {
           await writeToDirectory(directoryHandle, filename, blob);
         } else {
@@ -537,6 +561,9 @@
       if (err?.name === "AbortError") status("Guardado cancelado.");
       else status(`Error al guardar PDFs: ${err?.message || "desconocido"}`, true);
     } finally {
+      // También restaurar el formulario si se agotó el tiempo de captura.
+      window.endPdfCapture?.();
+      window.SamplastPdfProgress?.hide?.();
       restoreState(st);
       btnPdf.disabled = false;
       btnPdf.textContent = old;

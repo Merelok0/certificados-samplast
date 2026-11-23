@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SAMPLAST - Certificado de Calidad</title>
   <link rel="stylesheet" href="css/certificado.css?v=final-20260908-2">
-  <link rel="stylesheet" href="css/lote-masivo.css?v=typography-20261123-1">
+  <link rel="stylesheet" href="css/lote-masivo.css?v=etapa1-20261123-1">
   <link rel="stylesheet" href="css/clientes-admin.css?v=final-20260914-1">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1f4e79">
   <script src="js/cert-assets.js?v=final-20260908-2" defer></script>
   <script src="js/html2pdf.bundle.min.js?v=final-20260908-2" defer></script>
-  <script src="js/app.js?v=dropdown-20261123-1" defer></script>
-  <script src="js/clientes-admin-v2.js?v=instructivo-20261123-1" defer></script>
+  <script src="js/app.js?v=etapa1-20261123-1" defer></script>
+  <script src="js/clientes-admin-v2.js?v=etapa1-20261123-1" defer></script>
   <script src="js/pdf-nombre-clientes.js?v=final-20260912-1" defer></script>
-  <script src="js/lote-masivo-v4.js?v=pdf-fix-20261123-2" data-samplast-lotes-v2="1" defer></script>
+  <script src="js/lote-masivo-v4.js?v=etapa1-20261123-1" data-samplast-lotes-v2="1" defer></script>
 </head>
 <body>
 
@@ -230,5 +230,16 @@
   </div>
 
   <div id="batch-print-root" aria-hidden="true"></div>
+
+  <!-- Progreso visible fuera del formulario, que se oculta durante la captura PDF. -->
+  <div id="pdf-progress-overlay" class="pdf-progress-overlay" role="status" aria-live="polite" hidden>
+    <div class="pdf-progress-card">
+      <span class="pdf-progress-spinner" aria-hidden="true"></span>
+      <div>
+        <strong id="pdf-progress-message">Preparando PDF…</strong>
+        <small>No cierre esta pestaña durante la generación.</small>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
