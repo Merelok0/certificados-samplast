@@ -558,6 +558,8 @@
       if (err?.name === "AbortError") status("Guardado cancelado.");
       else status(`Error al guardar PDFs: ${err?.message || "desconocido"}`, true);
     } finally {
+      // También restaurar el formulario si se agotó el tiempo de captura.
+      window.endPdfCapture?.();
       window.SamplastPdfProgress?.hide?.();
       restoreState(st);
       btnPdf.disabled = false;
