@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SAMPLAST - Certificado de Calidad</title>
   <link rel="stylesheet" href="css/certificado.css?v=final-20260908-2">
-  <link rel="stylesheet" href="css/lote-masivo.css?v=final-20260914-1">
+  <link rel="stylesheet" href="css/lote-masivo.css?v=dropdown-20261123-1">
   <link rel="stylesheet" href="css/clientes-admin.css?v=final-20260914-1">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1f4e79">
   <script src="js/cert-assets.js?v=final-20260908-2" defer></script>
   <script src="js/html2pdf.bundle.min.js?v=final-20260908-2" defer></script>
-  <script src="js/app.js?v=pdf-fix-20261123-2" defer></script>
+  <script src="js/app.js?v=dropdown-20261123-1" defer></script>
   <script src="js/clientes-admin-v2.js?v=final-20260914-1" defer></script>
   <script src="js/pdf-nombre-clientes.js?v=final-20260912-1" defer></script>
   <script src="js/lote-masivo-v4.js?v=pdf-fix-20261123-2" data-samplast-lotes-v2="1" defer></script>
@@ -35,18 +35,28 @@
         <div class="bulk-actions">
           <button class="btn btn-primary" id="btn-bulk-load" type="button">Cargar y revisar</button>
           <button class="btn btn-secondary" id="btn-bulk-clear" type="button">Limpiar</button>
-          <button class="btn btn-secondary" id="btn-bulk-print" type="button" disabled>Imprimir todos</button>
-          <button class="btn btn-secondary" id="btn-bulk-pdf" type="button" disabled>Guardar PDFs separados</button>
         </div>
         <div id="bulk-status" class="bulk-status" role="status" aria-live="polite"></div>
         <div id="bulk-table-container" class="bulk-table-wrap" hidden></div>
       </section>
 
-      <section class="current-cert-actions" aria-label="Acciones del certificado mostrado">
-        <p class="current-cert-actions-title">Certificado mostrado</p>
+      <section class="current-cert-actions" aria-label="Descargar o imprimir certificados">
+        <p class="current-cert-actions-title">Acciones de certificados</p>
         <div class="current-cert-buttons">
-          <button class="btn btn-primary" id="btn-pdf" type="button">Guardar PDF mostrado</button>
-          <button class="btn btn-secondary" id="btn-print" type="button">Imprimir mostrado</button>
+          <details class="cert-action-menu" id="cert-download-menu">
+            <summary class="btn btn-primary">Descargar PDF <span aria-hidden="true">▾</span></summary>
+            <div class="cert-action-options">
+              <button class="cert-action-option" id="btn-pdf" type="button">Certificado mostrado</button>
+              <button class="cert-action-option" id="btn-bulk-pdf" type="button" disabled>Todos (PDFs separados)</button>
+            </div>
+          </details>
+          <details class="cert-action-menu" id="cert-print-menu">
+            <summary class="btn btn-secondary">Imprimir <span aria-hidden="true">▾</span></summary>
+            <div class="cert-action-options">
+              <button class="cert-action-option" id="btn-print" type="button">Certificado mostrado</button>
+              <button class="cert-action-option" id="btn-bulk-print" type="button" disabled>Todos los certificados</button>
+            </div>
+          </details>
         </div>
         <p class="field-note pdf-export-status" id="pdf-export-status" role="status" aria-live="polite"></p>
       </section>
