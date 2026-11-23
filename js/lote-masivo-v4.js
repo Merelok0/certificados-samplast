@@ -442,7 +442,7 @@
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(() => URL.revokeObjectURL(u),1500);
+    setTimeout(() => URL.revokeObjectURL(u),30000);
   }
 
   function currentPdfName() {
@@ -495,7 +495,13 @@
 
       if (window.isSecureContext && typeof window.showDirectoryPicker === "function") {
         status("Elija una carpeta. Se guardará un PDF separado por certificado con su nombre individual.");
-        directoryHandle = await window.showDirectoryPicker({mode:"readwrite"});
+        try {
+          directoryHandle = await window.showDirectoryPicker({mode:"readwrite"});
+        } catch (pickerError) {
+          if (pickerError?.name === "AbortError") throw pickerError;
+          console.warn("Selector de carpetas no disponible; se usarán descargas:", pickerError);
+          status("No se pudo elegir carpeta. Se intentarán descargar los PDFs por separado.");
+        }
       } else {
         status("El navegador no permite elegir una carpeta única; se descargarán los PDFs por separado.");
       }
