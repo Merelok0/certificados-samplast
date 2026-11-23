@@ -660,6 +660,29 @@ function setPdfExportStatus(message, isError = false) {
   status.classList.toggle("is-error", isError);
 }
 
+function showPdfProgress(message) {
+  const overlay = document.getElementById("pdf-progress-overlay");
+  const label = document.getElementById("pdf-progress-message");
+  if (label) label.textContent = message || "Generando PDF…";
+  if (overlay) overlay.hidden = false;
+}
+
+function hidePdfProgress() {
+  const overlay = document.getElementById("pdf-progress-overlay");
+  if (overlay) overlay.hidden = true;
+}
+
+// Evita una espera infinita si una librería o imagen deja de responder.
+function withPdfTimeout(task, maxMs = 90000) {
+  let timer;
+  const limit = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(
+      new Error("La generación del PDF excedió el tiempo de espera. Recargue la página y vuelva a intentarlo.")
+    ), maxMs);
+  });
+  return Promise.race([Promise.resolve(task), limit]).finally(() => clearTimeout(timer));
+}
+
 function waitForImage(img) {
   // Una imagen rota puede tener complete=true y naturalWidth=0.
   // Sus eventos ya ocurrieron: esperar otros bloquea toda la exportación.
@@ -976,14 +999,16 @@ async function exportPdf() {
 
     if (btn) btn.textContent = "Generando PDF…";
     setPdfExportStatus("Generando PDF, espere un momento…");
+    showPdfProgress("Generando el certificado mostrado…");
 
     beginPdfCapture();
-    const blob = await buildCertificatePdfBlob(element, orientation);
+    const blob = await withPdfTimeout(buildCertificatePdfBlob(element, orientation));
 
     if (!blob || blob.size < 1000) {
       throw new Error("El PDF salió vacío. Use Imprimir → Guardar como PDF.");
     }
 
+    showPdfProgress("Escribiendo el archivo PDF…");
     const result = await writePdfBlob(blob, filename, fileHandle);
     if (result.mode === "picker") {
       setPdfExportStatus(`PDF guardado: ${result.name}`);
@@ -1008,6 +1033,7 @@ async function exportPdf() {
     }
   } finally {
     endPdfCapture();
+    hidePdfProgress();
     if (btn) {
       btn.disabled = false;
       btn.textContent = originalLabel;
@@ -1094,3 +1120,8 @@ window.autoFillDates = autoFillDates;
 window.buildCertificatePdfBlob = buildCertificatePdfBlob;
 window.beginPdfCapture = beginPdfCapture;
 window.endPdfCapture = endPdfCapture;
+window.SamplastPdfProgress = {
+  show: showPdfProgress,
+  hide: hidePdfProgress,
+  withTimeout: withPdfTimeout
+};
