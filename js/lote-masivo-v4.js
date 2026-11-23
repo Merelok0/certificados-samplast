@@ -188,6 +188,9 @@
     if (rawColor && !VALID_COLORS.has(rawColor) && !["TRANSPARENTE","CRISTAL","NATURAL"].includes(rawColor)) {
       return { cliente, tipo, color, codigo, codigoSap, lote, formatoFuente: explicit?.formato || "", error: `Color no reconocido: ${rawColor}`, source };
     }
+    if (codeColor && ["TRANSPARENTE","CRISTAL","NATURAL"].includes(rawColor)) {
+      return { cliente, tipo, color, codigo, codigoSap, lote, formatoFuente: explicit?.formato || "", error: `El código ${codigo} indica ${codeColor}, pero el color declarado es ${rawColor}.`, source };
+    }
     if (decoded && !decoded.error && declaredColor && declaredColor !== decoded.color) {
       return { cliente, tipo, color, codigo, codigoSap, lote, formatoFuente: explicit?.formato || "", error: `El color ${declaredColor} contradice el código técnico ${codigo}.`, source };
     }
