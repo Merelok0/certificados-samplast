@@ -381,7 +381,17 @@
     if (typeof window.updatePreview === "function") window.updatePreview();
   }
 
-  const paint = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  // Evita quedar esperando indefinidamente al volver del selector de carpeta.
+  const paint = () => new Promise(resolve => {
+    let finished = false;
+    const done = () => {
+      if (finished) return;
+      finished = true;
+      resolve();
+    };
+    setTimeout(done, 250);
+    requestAnimationFrame(() => requestAnimationFrame(done));
+  });
 
   async function buildPages() {
     if (!batchRoot) throw new Error("No se encontró el contenedor de impresión.");
