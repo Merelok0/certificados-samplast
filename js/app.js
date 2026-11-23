@@ -795,8 +795,17 @@ function unmountViewportExportClone(wrapper) {
 
 async function preparePdfExportTarget(element) {
   element.scrollIntoView({ block: "start" });
+  // Tras cerrar el selector de archivos, algunos navegadores suspenden
+  // requestAnimationFrame temporalmente. El temporizador evita el bloqueo.
   await new Promise((resolve) => {
-    requestAnimationFrame(() => requestAnimationFrame(resolve));
+    let finished = false;
+    const done = () => {
+      if (finished) return;
+      finished = true;
+      resolve();
+    };
+    setTimeout(done, 250);
+    requestAnimationFrame(() => requestAnimationFrame(done));
   });
   await waitForImages(element);
   await inlineImagesForExport(element);
