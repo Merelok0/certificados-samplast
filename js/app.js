@@ -1065,6 +1065,18 @@ document.getElementById("btn-ejemplo-color").addEventListener("click", loadExamp
 document.getElementById("btn-pdf").addEventListener("click", exportPdf);
 document.getElementById("btn-print").addEventListener("click", printCertificate);
 
+// Cierra el menú tras elegir una acción y al pulsar fuera de él.
+document.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof Element)) return;
+  const activeMenu = target.closest(".cert-action-menu");
+  document.querySelectorAll(".cert-action-menu[open]").forEach((menu) => {
+    if (menu !== activeMenu || target.closest(".cert-action-option")) {
+      menu.open = false;
+    }
+  });
+}, true);
+
 toggleColorField();
 if (!window.isSecureContext) {
   setPdfExportStatus(
