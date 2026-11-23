@@ -836,18 +836,28 @@ async function preparePdfExportTarget(element) {
 
 function canvasHasVisibleContent(canvas) {
   if (!canvas || !canvas.width || !canvas.height) return false;
-  const ctx = canvas.getContext("2d");
+  // El certificado puede comenzar con márgenes blancos. Se examina toda la hoja
+  // reducida, no solo la esquina superior izquierda (antes 120 × 120 píxeles).
+  const sample = document.createElement("canvas");
+  sample.width = Math.min(240, canvas.width);
+  sample.height = Math.min(240, canvas.height);
+  const ctx = sample.getContext("2d", { willReadFrequently: true });
   if (!ctx) return false;
-  const sampleWidth = Math.min(canvas.width, 120);
-  const sampleHeight = Math.min(canvas.height, 120);
-  const pixels = ctx.getImageData(0, 0, sampleWidth, sampleHeight).data;
-  for (let i = 0; i < pixels.length; i += 4) {
-    const alpha = pixels[i + 3];
-    if (alpha > 0 && (pixels[i] < 245 || pixels[i + 1] < 245 || pixels[i + 2] < 245)) {
-      return true;
+  try {
+    ctx.drawImage(canvas, 0, 0, sample.width, sample.height);
+    const pixels = ctx.getImageData(0, 0, sample.width, sample.height).data;
+    for (let i = 0; i < pixels.length; i += 4) {
+      if (pixels[i + 3] > 0 && (pixels[i] < 235 || pixels[i + 1] < 235 || pixels[i + 2] < 235)) {
+        return true;
+      }
     }
+    return false;
+  } catch (error) {
+    // Una imagen de origen cruzado puede impedir inspeccionar los píxeles;
+    // no se debe rechazar el PDF únicamente por este análisis.
+    console.warn("No se pudo verificar el contenido visual del canvas:", error);
+    return true;
   }
-  return false;
 }
 
 async function renderPdfBlobFromTarget(target, orientation) {
