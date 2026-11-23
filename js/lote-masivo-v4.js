@@ -536,8 +536,12 @@
         const filename = currentPdfName();
         btnPdf.textContent = `Guardando ${i+1}/${batchItems.length}…`;
         status(`Generando ${i+1} de ${batchItems.length}: ${filename}`);
-        const blob = await currentPdfBlob();
+        window.SamplastPdfProgress?.show?.(`Generando PDF ${i+1} de ${batchItems.length}…`);
+        const blob = window.SamplastPdfProgress?.withTimeout
+          ? await window.SamplastPdfProgress.withTimeout(currentPdfBlob(), 90000)
+          : await currentPdfBlob();
         if (!blob || blob.size < 1000) throw new Error(`El PDF ${i+1} salió vacío.`);
+        window.SamplastPdfProgress?.show?.(`Guardando PDF ${i+1} de ${batchItems.length}…`);
         if (directoryHandle) {
           await writeToDirectory(directoryHandle, filename, blob);
         } else {
@@ -551,6 +555,7 @@
       if (err?.name === "AbortError") status("Guardado cancelado.");
       else status(`Error al guardar PDFs: ${err?.message || "desconocido"}`, true);
     } finally {
+      window.SamplastPdfProgress?.hide?.();
       restoreState(st);
       btnPdf.disabled = false;
       btnPdf.textContent = old;
