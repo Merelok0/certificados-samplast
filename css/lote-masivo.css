@@ -238,6 +238,50 @@
 .cert-action-option:hover:not(:disabled) { background: #edf3f8; }
 .cert-action-option:disabled { cursor: not-allowed; opacity: 0.45; }
 
+/* Estado de exportación siempre visible: .panel-form se oculta durante html2canvas. */
+.pdf-progress-overlay[hidden] { display: none !important; }
+.pdf-progress-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.43);
+  font-family: var(--sheet-font);
+}
+.pdf-progress-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  max-width: 420px;
+  width: 100%;
+  padding: 20px;
+  border: 1px solid #d5dbe3;
+  border-radius: 8px;
+  background: #fff;
+  color: #1f2937;
+  box-shadow: 0 12px 36px rgba(0,0,0,.17);
+  font-size: .83rem;
+  line-height: 1.4;
+}
+.pdf-progress-card strong { display: block; font-size: .83rem; }
+.pdf-progress-card small { display: block; margin-top: 4px; color: #64748b; font-size: .75rem; }
+.pdf-progress-spinner {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  border: 3px solid #d5dbe3;
+  border-top-color: #1f4e79;
+  border-radius: 50%;
+  animation: samplast-pdf-spin .8s linear infinite;
+}
+@keyframes samplast-pdf-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .pdf-progress-spinner { animation: none; }
+}
+
 .individual-panel { margin: 0 0 14px; }
 .individual-panel .tool-panel-content { padding-top: 12px; }
 
