@@ -182,6 +182,9 @@
     if (!tipo || tipo === "REVISAR") return { cliente, tipo: tipo || "REVISAR", color, codigo, codigoSap: codigoSap || (codigoEsSap ? originalCodigo : ""), lote, formatoFuente: explicit?.formato || "", error: "Falta identificar el TIPO de producto. Revise la etiqueta.", source };
     if (!VALID_TYPES.has(tipo)) return { cliente, tipo, color, codigo, codigoSap: codigoSap || (codigoEsSap ? originalCodigo : ""), lote, formatoFuente: explicit?.formato || "", error: `Tipo no reconocido: ${tipo}`, source };
     if (tipo === "MANUAL_COLOR" && !VALID_COLORS.has(color)) return { cliente, tipo, color, codigo, codigoSap: codigoSap || (codigoEsSap ? originalCodigo : ""), lote, formatoFuente: explicit?.formato || "", error: "MANUAL_COLOR requiere un color válido.", source };
+    if (color && tipo !== "MANUAL_COLOR") {
+      return { cliente, tipo, color, codigo, codigoSap, lote, formatoFuente: explicit?.formato || "", error: `El tipo ${tipo} no permite color ${color}. Revise el tipo de producto.`, source };
+    }
     if (rawColor && !VALID_COLORS.has(rawColor) && !["TRANSPARENTE","CRISTAL","NATURAL"].includes(rawColor)) {
       return { cliente, tipo, color, codigo, codigoSap, lote, formatoFuente: explicit?.formato || "", error: `Color no reconocido: ${rawColor}`, source };
     }
