@@ -661,10 +661,24 @@ function setPdfExportStatus(message, isError = false) {
 }
 
 function waitForImage(img) {
-  if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+  // Una imagen rota puede tener complete=true y naturalWidth=0.
+  // Sus eventos ya ocurrieron: esperar otros bloquea toda la exportación.
+  if (img.complete) return Promise.resolve();
   return new Promise((resolve) => {
-    img.addEventListener("load", resolve, { once: true });
-    img.addEventListener("error", resolve, { once: true });
+    let finished = false;
+    let timer;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      img.removeEventListener("load", finish);
+      img.removeEventListener("error", finish);
+      resolve();
+    };
+    img.addEventListener("load", finish, { once: true });
+    img.addEventListener("error", finish, { once: true });
+    timer = setTimeout(finish, 10000);
+    if (img.complete) finish();
   });
 }
 
@@ -892,7 +906,8 @@ function downloadPdfBlob(blob, filename) {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  // Dejar tiempo al navegador para iniciar la descarga del blob.
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
 
 async function requestPdfSaveTarget(filename) {
@@ -939,9 +954,15 @@ async function exportPdf() {
 
     if (canUseSaveFilePicker()) {
       setPdfExportStatus("Elija carpeta y nombre del archivo…");
-      fileHandle = await requestPdfSaveTarget(filename);
+      try {
+        fileHandle = await requestPdfSaveTarget(filename);
+      } catch (pickerError) {
+        if (pickerError?.name === "AbortError") throw pickerError;
+        console.warn("Selector de archivos no disponible; se usará Descargas:", pickerError);
+        setPdfExportStatus("No se pudo abrir el selector. Se descargará el PDF automáticamente.");
+      }
     } else {
-      setPdfExportStatus("Abra con ABRIR_CERTIFICADO.bat para elegir carpeta al guardar.");
+      setPdfExportStatus("Se descargará el PDF automáticamente en el navegador.");
     }
 
     if (btn) btn.textContent = "Generando PDF…";
@@ -1049,3 +1070,6 @@ window.applyTipoRules = applyTipoRules;
 window.applyFormatoToFields = applyFormatoToFields;
 window.updatePreview = updatePreview;
 window.autoFillDates = autoFillDates;
+window.buildCertificatePdfBlob = buildCertificatePdfBlob;
+window.beginPdfCapture = beginPdfCapture;
+window.endPdfCapture = endPdfCapture;
