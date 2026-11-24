@@ -239,7 +239,8 @@ function sanitizeFilename(name) {
 
 function buildPdfFilename(data) {
   const datePart = formatFilenameDate(data.fechaFab);
-  const clientePart = clienteShortName(data.cliente);
+  const personalizado = window.SamplastPdfNombres?.getCustomShort?.(data.cliente);
+  const clientePart = clienteShortName(personalizado || data.cliente);
   const formatPart = formatFilenameSegment(data.ancho, data.espesor, data.peso);
   const suffix = tipoFilenameSuffix(data.tipo, data.color);
   return sanitizeFilename(`${datePart} ${clientePart} ${formatPart} ${suffix}.pdf`);
@@ -1030,7 +1031,8 @@ async function exportPdf() {
   const btn = document.getElementById("btn-pdf");
   const element = document.getElementById("cert-print-area");
   const orientation = getExportOrientation();
-  const filename = buildPdfFilename(getFormData());
+  const certificateData = getFormData();
+  const filename = buildPdfFilename(certificateData);
 
   if (!element) {
     setPdfExportStatus("No se encontró el certificado en pantalla.", true);
@@ -1081,6 +1083,8 @@ async function exportPdf() {
       throw new Error("El PDF salió vacío. Use Imprimir → Guardar como PDF.");
     }
 
+    // Solo datos; el registro no espera ninguna solicitud de red.
+    try { window.SamplastDrive?.record?.(certificateData,{filename,orientation}); } catch (_) {}
     stage = "escritura del archivo";
     showPdfProgress("Escribiendo el archivo PDF…");
     let result;
@@ -1129,6 +1133,10 @@ async function exportPdf() {
 
 function printCertificate() {
   applyPrintOrientation();
+  try {
+    const data=getFormData();
+    window.SamplastDrive?.record?.(data,{filename:buildPdfFilename(data),orientation:getExportOrientation(),state:"IMPRESIÓN SOLICITADA"});
+  } catch (_) {}
   window.print();
 }
 

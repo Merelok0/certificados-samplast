@@ -154,7 +154,8 @@
     }
 
     refreshAll();
-    setClientStatus(`Cliente eliminado de esta instalación: ${item.cliente}`);
+    setClientStatus(`Cliente eliminado: ${item.cliente}`);
+    try { window.SamplastDrive?.clientChange?.(item,"INACTIVO"); } catch (_) {}
   }
 
   function renderClients() {
@@ -212,12 +213,15 @@
     if (clientShortInput) clientShortInput.value = "";
     refreshAll();
     setClientStatus(`Cliente añadido: ${cliente}.`);
+    try { window.SamplastDrive?.clientChange?.({cliente,corto,origen:"personalizado"},"ACTIVO"); } catch (_) {}
   }
 
   function restoreHidden() {
+    const restored=new Set(loadHiddenKeys());
     localStorage.removeItem(HIDDEN_KEY);
     refreshAll();
     setClientStatus("Clientes eliminados de la base original restaurados.");
+    try { for(const item of safeBaseClients()) if(restored.has(normalizeKey(item.cliente))) window.SamplastDrive?.clientChange?.(item,"ACTIVO"); } catch (_) {}
   }
 
   async function copyPrompt() {

@@ -11,10 +11,11 @@
   <meta name="theme-color" content="#1f4e79">
   <script src="js/cert-assets.js?v=final-20260908-2" defer></script>
   <script src="js/html2pdf.bundle.min.js?v=final-20260908-2" defer></script>
-  <script src="js/app.js?v=pdf-recovery-20261124-1" defer></script>
-  <script src="js/clientes-admin-v2.js?v=etapa1-20261123-1" defer></script>
-  <script src="js/pdf-nombre-clientes.js?v=final-20260912-1" defer></script>
-  <script src="js/lote-masivo-v4.js?v=pdf-recovery-20261124-1" data-samplast-lotes-v2="1" defer></script>
+  <script src="js/app.js?v=drive-history-20261124-1" defer></script>
+  <script src="js/clientes-admin-v2.js?v=drive-history-20261124-1" defer></script>
+  <script src="js/pdf-nombre-clientes.js?v=drive-history-20261124-1" defer></script>
+  <script src="js/lote-masivo-v4.js?v=drive-history-20261124-1" data-samplast-lotes-v2="1" defer></script>
+  <script src="js/drive-sync.js?v=drive-history-20261124-1" defer></script>
 </head>
 <body>
 
@@ -105,6 +106,32 @@
             </div>
             <div id="clientes-personalizados-list" class="clientes-custom-list"></div>
             <p class="local-storage-note">Los cambios realizados aquí se conservan en este navegador.</p>
+          </div>
+        </details>
+        <details class="tool-panel">
+          <summary>Historial y base de datos en Drive</summary>
+          <div class="tool-panel-content">
+            <p class="tool-help">Registra los datos de certificados y sincroniza clientes. No sube archivos PDF.</p>
+            <p class="field-note">Pendientes locales: <strong id="drive-pending-count">0</strong></p>
+            <div id="drive-config" hidden>
+              <details>
+                <summary>Configuración inicial de Google Cloud</summary>
+                <div class="field"><label for="drive-client-id">ID de cliente OAuth web</label><input id="drive-client-id" type="text" autocomplete="off"></div>
+                <div class="field"><label for="drive-api-key">Clave de API restringida de Picker</label><input id="drive-api-key" type="text" autocomplete="off"></div>
+                <div class="field"><label for="drive-project-number">Número del proyecto</label><input id="drive-project-number" type="text" inputmode="numeric" autocomplete="off"></div>
+                <p class="field-note">No ingrese contraseñas, secretos de cliente ni tokens. Consulte la guía de configuración del repositorio.</p>
+              </details>
+              <div class="tool-actions">
+                <button class="btn btn-primary" id="drive-connect" type="button">Conectar con Google</button>
+                <button class="btn btn-secondary" id="drive-sync" type="button">Sincronizar</button>
+                <button class="btn btn-secondary" id="drive-disconnect" type="button">Desconectar</button>
+              </div>
+              <div class="field"><label for="drive-history-search">Buscar certificados registrados</label><input id="drive-history-search" type="search" placeholder="Cliente, lote, fecha o formato"></div>
+              <div class="clientes-custom-list" id="drive-history-results"></div>
+              <div class="field"><label for="drive-import-clients">Importar respaldo de clientes</label><input id="drive-import-clients" type="file" accept=".json,application/json"></div>
+            </div>
+            <div class="tool-actions"><button class="btn btn-secondary" id="drive-export-clients" type="button">Exportar respaldo de clientes</button></div>
+            <div id="drive-sync-status" class="tool-status" role="status" aria-live="polite"></div>
           </div>
         </details>
       </section>

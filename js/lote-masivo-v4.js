@@ -454,6 +454,12 @@
         btnPrint.textContent = old;
       };
       window.addEventListener("afterprint", clean, {once:true});
+      try {
+        for(const x of batchItems) {
+          const data={...x,analista:form.analista?.value||""};
+          window.SamplastDrive?.record?.(data,{codigo:x.codigo||"",filename:window.buildPdfFilename?.(data)||"",orientation:form.pdf_orientation?.value||"portrait",state:"IMPRESIÓN SOLICITADA"});
+        }
+      } catch (_) {}
       window.print();
     } catch (err) {
       document.body.classList.remove("batch-print-mode");
@@ -554,6 +560,9 @@
           ? await window.SamplastPdfProgress.withTimeout(currentPdfBlob(), 90000)
           : await currentPdfBlob();
         if (!blob || blob.size < 1000) throw new Error(`El PDF ${i+1} salió vacío.`);
+        try {
+          window.SamplastDrive?.record?.(window.getFormData?.(),{codigo:batchItems[i].codigo||"",filename,orientation:form.pdf_orientation?.value||"portrait"});
+        } catch (_) {}
         window.SamplastPdfProgress?.show?.(`Guardando PDF ${i+1} de ${batchItems.length}…`);
         stage = `escritura del PDF ${i+1} de ${batchItems.length}`;
         if (directoryHandle) {
