@@ -15,7 +15,7 @@
   const store = (k,v) => localStorage.setItem(k,JSON.stringify(v));
   const pending = k => { const v=read(k,[]); return Array.isArray(v)?v:[]; };
   const stamp = () => new Intl.DateTimeFormat("sv-SE",{timeZone:"America/Lima",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}).format(new Date());
-  let token="", expiry=0, sheetId="", config={}, syncing=null, history=[], lastError="";
+  let token="", expiry=0, sheetId="", config={}, syncing=null, history=[], lastError="", timer=null;
   const status = (s,err=false) => {
     const el=$("drive-sync-status"); if(el){el.textContent=s;el.classList.toggle("is-error",err);}
     const ct=$("drive-pending-count");if(ct)ct.textContent=String(pending(QUEUE).length+pending(CLIENTQ).length);
@@ -27,8 +27,8 @@
     else status("Sin conexión a Drive. Los datos nuevos quedan pendientes en este navegador hasta conectar.");
   }
   function schedule(){
-    if(active()&&!syncing) void sync().catch(()=>{});
-    else refreshStatus();
+    refreshStatus();
+    if(active()&&!syncing){clearTimeout(timer);timer=setTimeout(()=>void sync().catch(()=>{}),1200);}
   }
   function record(data, meta={}){
     if(!trusted)return;
@@ -36,7 +36,7 @@
       const d=data||{}, now=stamp(), cliente=String(d.cliente||"").trim(), lote=String(d.lote||"").trim();
       if(!cliente||!lote||!d.tipo||!d.fechaFab||!d.ancho||!d.espesor||!d.peso)return;
       const short=(window.SamplastClientes?.getAll?.()||[]).find(x=>key(x.cliente)===key(cliente))?.corto || "";
-      const row=["",now,cliente,short,d.tipo,d.color||"",meta.codigo||"",[d.ancho,d.espesor,d.peso].join("*"),String(d.ancho),String(d.espesor),String(d.peso),lote,d.fechaFab,d.fechaEmision||"",d.analista||"",meta.orientation||"portrait",meta.filename||"","PDF GENERADO","samplast-20261124"];
+      const row=["",now,cliente,short,d.tipo,d.color||"",meta.codigo||"",[d.ancho,d.espesor,d.peso].join("*"),String(d.ancho),String(d.espesor),String(d.peso),lote,d.fechaFab,d.fechaEmision||"",d.analista||"",meta.orientation||"portrait",meta.filename||"",meta.state||"PDF GENERADO","samplast-20261124"];
       // Misma fecha y contenido = mismo registro; distinto día conserva la nueva emisión.
       const identity=JSON.stringify([now.slice(0,10),...row.slice(2,18)]);
       const q=pending(QUEUE);
@@ -89,7 +89,11 @@
     for(const r of rows){
       const [id,cliente,corto,origen,state]=r;
       if(!id||!cliente||key(cliente)!==id||queued.has(id))continue;
-      if(state==="INACTIVO"){custom.delete(id);hidden.add(id);}
+      if(state==="INACTIVO"){
+        const existing=custom.get(id);
+        if(existing&&existing.corto!==corto){conflicts++;continue;}
+        custom.delete(id);hidden.add(id);
+      }
       else if(state==="ACTIVO"){
         hidden.delete(id);
         if(origen==="personalizado"){
@@ -103,17 +107,23 @@
     return conflicts;
   }
   async function syncClients(){
-    let rows=(await values("Clientes!A2:F")).filter(r=>r[0]);
-    const map=new Map(rows.map((r,i)=>[r[0],{row:r,index:i+2}]));
+    let rows=await values("Clientes!A2:F");
+    const map=new Map(rows.map((r,i)=>[r[0],{row:r,index:i+2}]).filter(([id])=>id));
     // Primera vinculación: subir las altas que ya estaban guardadas localmente.
     const local=window.SamplastClientes?.getCustom?.()||[];
     const migrationKey="samplast_drive_migrated_"+sheetId;
     const changes=pending(CLIENTQ);
     if(!read(migrationKey,false)){
+      store("samplast_drive_client_backup_"+sheetId,{custom:local,hidden:window.SamplastClientes?.getHidden?.()||[]});
       for(const x of local){
         const k=key(x.cliente), remote=map.get(k)?.row;
         if(!changes.some(q=>q.id===k)&&(!remote||remote[3]==="base"&&remote[4]==="ACTIVO"))
           changes.push({id:k,row:[k,x.cliente,x.corto,"personalizado","ACTIVO",stamp()]});
+      }
+      for(const id of window.SamplastClientes?.getHidden?.()||[]){
+        const remote=map.get(id)?.row;
+        if(remote&&remote[3]==="base"&&remote[4]==="ACTIVO"&&!remote[5]&&!changes.some(q=>q.id===id))
+          changes.push({id,row:[id,remote[1],remote[2],"base","INACTIVO",stamp()]});
       }
       store(CLIENTQ,changes);
     }
@@ -155,7 +165,7 @@
         lastError=conflicts?conflicts+" nombre(s) corto(s) en conflicto. Se conservó el valor local; revise Clientes.":"";
         refreshStatus();
       }catch(e){lastError=e.message;status("No sincronizado: "+e.message+". Los pendientes permanecen en esta PC.",true);throw e;}
-      finally{syncing=null;}
+      finally{syncing=null;if(!lastError&&(pending(QUEUE).length||pending(CLIENTQ).length))schedule();}
     })();
     return syncing;
   }
@@ -178,7 +188,7 @@
       .setDeveloperKey(config.apiKey).setAppId(config.project).setOrigin(location.origin)
       .setTitle("Seleccione BASE DE DATOS SAMPLAST")
       .setCallback(async data=>{
-        if(data.action!==google.picker.Action.PICKED)return;
+        if(data.action!==google.picker.Action.PICKED){if(data.action===google.picker.Action.CANCEL)status("Selección cancelada; no se escribió nada.");return;}
         const doc=data.docs?.[0];if(!doc||doc.name!==TITLE){status("Seleccione el archivo exacto "+TITLE+".",true);return;}
         sheetId=doc.id;
         try{
@@ -195,7 +205,10 @@
       const previous=read(CFG,{});
       config={clientId,apiKey,project,sheetId:previous.clientId===clientId?previous.sheetId||"":""};
       store(CFG,config);
-      await libraries();
+      if(!window.google?.accounts?.oauth2 || !window.google?.picker){
+        await libraries();
+        status("Google preparado. Pulse Conectar nuevamente para autorizar.");return;
+      }
       status("Autorice la conexión en Google.");
       const client=google.accounts.oauth2.initTokenClient({
         client_id:clientId,scope:SCOPE,include_granted_scopes:false,
@@ -212,7 +225,7 @@
       client.requestAccessToken({prompt:"consent"});
     }catch(e){status(e.message,true);}
   }
-  function disconnect(){token="";expiry=0;sheetId="";history=[];renderHistory();refreshStatus();}
+  function disconnect(){clearTimeout(timer);token="";expiry=0;sheetId="";history=[];renderHistory();refreshStatus();}
   function renderHistory(){
     const container=$("drive-history-results");if(!container)return;
     container.replaceChildren();
