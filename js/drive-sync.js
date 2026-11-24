@@ -34,7 +34,7 @@
     if(!trusted)return;
     try {
       const d=data||{}, now=stamp(), cliente=String(d.cliente||"").trim(), lote=String(d.lote||"").trim();
-      if(!cliente||!lote||!d.tipo||!d.fechaFab||!d.ancho||!d.espesor||!d.peso)return;
+      if(!cliente||!lote||!d.tipo||!d.fechaFab||!d.ancho||!d.espesor||!d.peso){status("Certificado sin datos mínimos para historial; revise el formulario.",true);return;}
       const short=(window.SamplastClientes?.getAll?.()||[]).find(x=>key(x.cliente)===key(cliente))?.corto || "";
       const row=["",now,cliente,short,d.tipo,d.color||"",meta.codigo||"",[d.ancho,d.espesor,d.peso].join("*"),String(d.ancho),String(d.espesor),String(d.peso),lote,d.fechaFab,d.fechaEmision||"",d.analista||"",meta.orientation||"portrait",meta.filename||"",meta.state||"PDF GENERADO","samplast-20261124"];
       // Misma fecha y contenido = mismo registro; distinto día conserva la nueva emisión.
@@ -261,16 +261,20 @@
       const d=JSON.parse(await file.text());if(d.version!==1||!Array.isArray(d.custom)||!Array.isArray(d.hidden))throw Error("Respaldo inválido.");
       const map=new Map((window.SamplastClientes?.getCustom?.()||[]).map(x=>[key(x.cliente),{cliente:x.cliente,corto:x.corto}]));
       let n=0,conflicts=0;
+      const added=[];
       for(const x of d.custom){
         const cliente=String(x?.cliente||"").trim(),corto=String(x?.corto||"").trim(),id=key(cliente);
         if(!id||!corto)continue;
         if(map.has(id)){if(map.get(id).corto!==corto)conflicts++;continue;}
-        map.set(id,{cliente,corto});n++;
+        map.set(id,{cliente,corto});added.push({cliente,corto,origen:"personalizado"});n++;
       }
       store(CUSTOM,[...map.values()]);
       const hidden=new Set([...(window.SamplastClientes?.getHidden?.()||[]),...d.hidden.filter(x=>typeof x==="string"&&key(x)===x)]);
       store(HIDDEN,[...hidden]);window.SamplastClientes?.refresh?.();
-      if(sheetId)localStorage.removeItem("samplast_drive_migrated_"+sheetId);
+      const linked=sheetId||read(CFG,{}).sheetId;
+      if(linked)localStorage.removeItem("samplast_drive_migrated_"+linked);
+      // Una importación posterior a la primera vinculación también debe sincronizarse.
+      for(const item of added)clientChange(item,"ACTIVO");
       status(n+" clientes importados, "+conflicts+" conflictos conservados localmente. Pulse Sincronizar.");
     }catch(e){status("No se pudo importar: "+e.message,true);}
   }
