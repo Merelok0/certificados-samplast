@@ -30,15 +30,8 @@
     const shortName = getCustomShort(officialName);
     if (!shortName) return "";
 
-    // Reutiliza exactamente la lógica oficial de nombres del sistema.
-    // Solo sustituye temporalmente el cliente para calcular el nombre del archivo;
-    // el certificado mostrado mantiene la razón social completa.
-    clientInput.value = shortName;
-    try {
-      return window.buildPdfFilename(window.getFormData());
-    } finally {
-      clientInput.value = officialName;
-    }
+    // La función central ya usa el corto personalizado sin alterar la razón social.
+    return window.buildPdfFilename(window.getFormData());
   }
 
   function refreshPdfNamePreview() {
@@ -69,31 +62,7 @@
       form.addEventListener("change", refreshSoon);
     }
 
-    // El guardado individual usa la función original del proyecto, pero calcula
-    // el nombre con el corto personalizado antes de abrir Guardar como.
-    pdfButton?.addEventListener("click", (event) => {
-      if (!clientInput || typeof window.exportPdf !== "function") return;
-      const officialName = clientInput.value;
-      const shortName = getCustomShort(officialName);
-      if (!shortName) return; // clientes de la base siguen usando la lógica anterior
-
-      event.preventDefault();
-      event.stopImmediatePropagation();
-
-      clientInput.value = shortName;
-      let result;
-      try {
-        result = window.exportPdf();
-      } catch (error) {
-        clientInput.value = officialName;
-        throw error;
-      }
-
-      Promise.resolve(result).finally(() => {
-        clientInput.value = officialName;
-        setTimeout(refreshPdfNamePreview, 0);
-      });
-    }, true);
+    // El nombre se resuelve en buildPdfFilename: no se modifica el formulario durante el guardado.
 
     refreshPdfNamePreview();
   }
