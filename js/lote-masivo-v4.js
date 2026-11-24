@@ -503,9 +503,7 @@
 
   async function writeToDirectory(directoryHandle, filename, blob) {
     const fileHandle = await directoryHandle.getFileHandle(filename, {create:true});
-    const writable = await fileHandle.createWritable();
-    await writable.write(blob);
-    await writable.close();
+    await window.SamplastPdfSave.writeHandle(fileHandle, blob);
   }
 
   async function savePdfsSeparately(e) {
@@ -519,6 +517,9 @@
     const old = btnPdf.textContent;
     const st = saveState();
     let directoryHandle = null;
+    let saved = 0, downloaded = 0;
+    const failedWrites = [];
+    let stage = "selección de carpeta";
     try {
       btnPdf.disabled = true;
       btnPdf.textContent = "Preparando…";
@@ -528,15 +529,21 @@
         try {
           directoryHandle = await window.showDirectoryPicker({mode:"readwrite"});
         } catch (pickerError) {
-          if (pickerError?.name === "AbortError") throw pickerError;
-          console.warn("Selector de carpetas no disponible; se usarán descargas:", pickerError);
-          status("No se pudo elegir carpeta. Se intentarán descargar los PDFs por separado.");
+          const detail = window.SamplastPdfSave.describeError(pickerError);
+          console.warn("Fallo del selector de carpetas:", pickerError);
+          if (!window.SamplastPdfSave.confirmFallback(pickerError)) {
+            status("No se inició el guardado. Selector: " + detail, true);
+            return;
+          }
+          status("Selector no disponible. Se solicitarán las descargas por separado.");
         }
       } else {
-        status("El navegador no permite elegir una carpeta única; se descargarán los PDFs por separado.");
+        status("El navegador no permite elegir una carpeta única; se solicitarán los PDFs por separado.");
       }
 
+      window.SamplastPdfSave.clearRecovery();
       for (let i=0; i<batchItems.length; i++) {
+        stage = `generación del PDF ${i+1} de ${batchItems.length}`;
         loadItem(batchItems[i]);
         await paint();
         const filename = currentPdfName();
@@ -548,20 +555,34 @@
           : await currentPdfBlob();
         if (!blob || blob.size < 1000) throw new Error(`El PDF ${i+1} salió vacío.`);
         window.SamplastPdfProgress?.show?.(`Guardando PDF ${i+1} de ${batchItems.length}…`);
+        stage = `escritura del PDF ${i+1} de ${batchItems.length}`;
         if (directoryHandle) {
-          await writeToDirectory(directoryHandle, filename, blob);
-        } else {
-          downloadBlob(blob, filename);
-          await new Promise(r => setTimeout(r, 700));
+          try {
+            await writeToDirectory(directoryHandle, filename, blob);
+            saved++;
+            continue;
+          } catch (writeError) {
+            const detail = window.SamplastPdfSave.describeError(writeError);
+            console.error("Fallo de escritura:", filename, writeError);
+            failedWrites.push(filename + ": " + detail);
+          }
         }
+        stage = `descarga alternativa del PDF ${i+1} de ${batchItems.length}`;
+        window.SamplastPdfSave.offerDownload(blob, filename);
+        downloaded++;
+        await new Promise(r => setTimeout(r, 700));
       }
 
-      status(`${batchItems.length} PDFs separados guardados correctamente.`);
+      if (downloaded) {
+        status(`${saved} guardados en carpeta; ${downloaded} descargas solicitadas. Revise Descargas o use los enlaces de recuperación.` +
+          (failedWrites.length ? " Fallos de escritura: " + failedWrites.join(" | ") : ""), !!failedWrites.length);
+      } else {
+        status(`${saved} PDFs separados guardados correctamente.`);
+      }
     } catch (err) {
-      if (err?.name === "AbortError") status("Guardado cancelado.");
-      else status(`Error al guardar PDFs: ${err?.message || "desconocido"}`, true);
+      console.error("Error masivo en " + stage, err);
+      status(`Error en ${stage}: ${window.SamplastPdfSave.describeError(err)}. ${saved} guardados en carpeta; ${downloaded} descargas solicitadas. ${batchItems.length-saved-downloaded} pendientes.`, true);
     } finally {
-      // También restaurar el formulario si se agotó el tiempo de captura.
       window.endPdfCapture?.();
       window.SamplastPdfProgress?.hide?.();
       restoreState(st);
