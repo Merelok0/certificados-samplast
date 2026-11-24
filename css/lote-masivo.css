@@ -346,3 +346,9 @@ body.batch-pdf-mode #batch-print-root .cert-page {
   .current-cert-buttons { grid-template-columns: 1fr; }
   .bulk-actions .btn { font-size: 0.72rem; padding-left: 6px; padding-right: 6px; }
 }
+
+/* Descargas de recuperación disponibles si el navegador no escribe en la carpeta. */
+.pdf-recovery-links[hidden] { display: none !important; }
+.pdf-recovery-links { margin-top: 6px; font-family: var(--sheet-font); font-size: .75rem; line-height: 1.4; }
+.pdf-recovery-links::before { content: "Volver a descargar:"; display: block; font-weight: 700; margin-bottom: 4px; }
+.pdf-recovery-links a { display: block; color: #1f4e79; text-decoration: underline; overflow-wrap: anywhere; margin: 3px 0; }
