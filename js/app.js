@@ -935,6 +935,63 @@ async function buildCertificatePdfBlob(element, orientation) {
   throw lastError || new Error("No se pudo generar el PDF.");
 }
 
+function describePdfError(error) {
+  return [error?.name, error?.message].filter(Boolean).join(": ") || "Error desconocido";
+}
+
+// Conservar enlaces de recuperación: el navegador no confirma que una descarga
+// automática llegue a disco y puede bloquear varias descargas consecutivas.
+function offerPdfDownload(blob, filename) {
+  const list = document.getElementById("pdf-recovery-links");
+  if (!list) {
+    downloadPdfBlob(blob, filename);
+    return;
+  }
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.textContent = filename;
+  link.dataset.pdfRecoveryUrl = url;
+  list.appendChild(link);
+  list.hidden = false;
+  link.click();
+}
+
+function clearPdfRecoveryLinks() {
+  const list = document.getElementById("pdf-recovery-links");
+  if (!list) return;
+  list.querySelectorAll("[data-pdf-recovery-url]").forEach(link => {
+    URL.revokeObjectURL(link.dataset.pdfRecoveryUrl);
+    link.remove();
+  });
+  list.hidden = true;
+}
+
+function confirmPdfDownloadAfterPickerError(error) {
+  return window.confirm(
+    "El navegador cerró o rechazó el selector de guardado.\n\n" +
+    describePdfError(error) +
+    "\n\n¿Desea continuar descargando los PDF sin elegir carpeta?\n" +
+    "Aceptar = Descargar. Cancelar = No guardar."
+  );
+}
+
+// Escribir en el destino elegido; si falla, cerrar/abortar el flujo abierto.
+async function writePdfToHandle(fileHandle, blob) {
+  let writable;
+  try {
+    writable = await fileHandle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+  } catch (error) {
+    if (writable) {
+      try { await writable.abort(); } catch (_) {}
+    }
+    throw error;
+  }
+}
+
 function canUseSaveFilePicker() {
   return typeof window.showSaveFilePicker === "function" && window.isSecureContext;
 }
@@ -962,12 +1019,10 @@ async function requestPdfSaveTarget(filename) {
 
 async function writePdfBlob(blob, filename, fileHandle = null) {
   if (fileHandle) {
-    const writable = await fileHandle.createWritable();
-    await writable.write(blob);
-    await writable.close();
+    await writePdfToHandle(fileHandle, blob);
     return { mode: "picker", name: fileHandle.name };
   }
-  downloadPdfBlob(blob, filename);
+  offerPdfDownload(blob, filename);
   return { mode: "download", name: filename };
 }
 
@@ -988,6 +1043,8 @@ async function exportPdf() {
 
   const originalLabel = btn?.textContent || "Guardar PDF…";
   let fileHandle = null;
+  let stage = "selección de archivo";
+  let pickerErrorDetails = "";
   try {
     if (btn) {
       btn.disabled = true;
@@ -999,14 +1056,20 @@ async function exportPdf() {
       try {
         fileHandle = await requestPdfSaveTarget(filename);
       } catch (pickerError) {
-        if (pickerError?.name === "AbortError") throw pickerError;
-        console.warn("Selector de archivos no disponible; se usará Descargas:", pickerError);
-        setPdfExportStatus("No se pudo abrir el selector. Se descargará el PDF automáticamente.");
+        pickerErrorDetails = describePdfError(pickerError);
+        console.warn("Fallo en el selector de archivos:", pickerError);
+        if (!confirmPdfDownloadAfterPickerError(pickerError)) {
+          setPdfExportStatus("No se inició el guardado. Selector: " + pickerErrorDetails, true);
+          return;
+        }
+        setPdfExportStatus("Selector no disponible. Se usará la descarga del navegador.");
       }
     } else {
       setPdfExportStatus("Se descargará el PDF automáticamente en el navegador.");
     }
 
+    clearPdfRecoveryLinks();
+    stage = "generación del PDF";
     if (btn) btn.textContent = "Generando PDF…";
     setPdfExportStatus("Generando PDF, espere un momento…");
     showPdfProgress("Generando el certificado mostrado…");
@@ -1018,20 +1081,33 @@ async function exportPdf() {
       throw new Error("El PDF salió vacío. Use Imprimir → Guardar como PDF.");
     }
 
+    stage = "escritura del archivo";
     showPdfProgress("Escribiendo el archivo PDF…");
-    const result = await writePdfBlob(blob, filename, fileHandle);
+    let result;
+    try {
+      result = await writePdfBlob(blob, filename, fileHandle);
+    } catch (writeError) {
+      if (!fileHandle) throw writeError;
+      console.error("No se pudo escribir en el destino elegido:", writeError);
+      // El PDF ya existe en memoria: no volver a generarlo ni perderlo.
+      stage = "descarga alternativa";
+      offerPdfDownload(blob, filename);
+      setPdfExportStatus("Falló la escritura (" + describePdfError(writeError) +
+        "). Descarga alternativa solicitada. Revise Descargas o pulse el enlace inferior.", true);
+      return;
+    }
     if (result.mode === "picker") {
       setPdfExportStatus(`PDF guardado: ${result.name}`);
     } else {
-      setPdfExportStatus(`PDF descargado: ${result.name} (revise Descargas si no eligió carpeta).`);
+      setPdfExportStatus("Descarga solicitada: " + result.name +
+        ". Revise Descargas o pulse el enlace inferior." +
+        (pickerErrorDetails ? " Selector: " + pickerErrorDetails : ""));
     }
   } catch (error) {
-    if (error?.name === "AbortError") {
-      setPdfExportStatus("Guardado cancelado.");
-      return;
-    }
-    console.error(error);
-    setPdfExportStatus(`Error al generar PDF: ${error?.message || "desconocido"}`, true);
+    console.error("Error PDF en " + stage, error);
+    endPdfCapture();
+    hidePdfProgress();
+    setPdfExportStatus("Error en " + stage + ": " + describePdfError(error), true);
     const usePrint = window.confirm(
       "No se pudo guardar el PDF.\n\n" +
         `${error?.message || "Error desconocido"}\n\n` +
@@ -1134,4 +1210,11 @@ window.SamplastPdfProgress = {
   show: showPdfProgress,
   hide: hidePdfProgress,
   withTimeout: withPdfTimeout
+};
+window.SamplastPdfSave = {
+  describeError: describePdfError,
+  confirmFallback: confirmPdfDownloadAfterPickerError,
+  offerDownload: offerPdfDownload,
+  clearRecovery: clearPdfRecoveryLinks,
+  writeHandle: writePdfToHandle
 };
