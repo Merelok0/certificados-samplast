@@ -1,14 +1,16 @@
-# Conectar SAMPLAST a la base privada de Google Sheets
+# Conectar SAMPLAST a Registro C.C-2027
+
+**Modo manual sin Google Cloud:** desbloquea Registro de certificados y clientes, abre la hoja y copia los datos de la sesión. La contraseña protege el enlace cifrado de la interfaz; la seguridad efectiva depende de Google. En Compartir, cambia el acceso general a Restringido. No utilices simultáneamente copia manual y sincronización automática para los mismos registros.
 
 ## Antes de empezar
 
-El archivo ya debe existir en tu Drive, con nombre **BASE DE DATOS SAMPLAST**, hojas **Historial** y **Clientes** y los encabezados de la plantilla. No lo compartas públicamente.
+El archivo ya debe existir en tu Drive, con nombre **Registro C.C-2027**, hojas **Historial** y **Clientes** y los encabezados de la plantilla. No lo compartas públicamente.
 
 La aplicación actual conserva el guardado PDF. La sincronización usa Google Identity Services y Google Picker, con el único permiso `https://www.googleapis.com/auth/drive.file`. El token permanece en memoria de la pestaña y no se guarda en GitHub ni localStorage. La clave de Picker y el ID OAuth son parámetros de cliente; nunca introduzcas secretos OAuth, contraseñas ni tokens. Los datos salen directamente del navegador a Google Sheets.
 
 ## 1. Acceso seguro y respaldo
 
-- Si usas HTMLPreview, abre el apartado «Historial y base de datos en Drive», pulsa «Exportar respaldo de clientes» y guarda el JSON en tu PC. Los clientes añadidos en HTMLPreview están asociados a ese origen.
+- Si usas HTMLPreview, abre el apartado «Sincronización automática (configuración avanzada)», pulsa «Exportar respaldo de clientes» y guarda el JSON en tu PC. Los clientes añadidos en HTMLPreview están asociados a ese origen.
 - Usa la aplicación en tu propio GitHub Pages: https://merelok0.github.io/certificados-samplast/ (solo si está publicada), o descarga el repositorio y abre `ABRIR_CERTIFICADO.bat` para usar localhost/127.0.0.1 puerto 8765.
 - Si Pages no está habilitado, en GitHub: Settings → Pages → Build and deployment → Source: GitHub Actions. Revisa el resultado del flujo «Publicar SAMPLAST en GitHub Pages».
 - No autorices `htmlpreview.github.io` como origen OAuth. La conexión se deshabilita allí porque es un origen compartido.
@@ -24,7 +26,7 @@ La aplicación actual conserva el guardado PDF. La sincronización usa Google Id
 
 ## 3. Autorizar el archivo
 
-En SAMPLAST, abre «Historial y base de datos en Drive» → «Configuración inicial de Google Cloud». Pega los tres parámetros (ID OAuth web, clave de API restringida, número del proyecto). Pulsa Conectar con Google. Si aparece «Google preparado», pulsa Conectar otra vez. Autoriza el permiso por archivo y selecciona **BASE DE DATOS SAMPLAST** en el selector de Google. La app comprueba el nombre y los encabezados antes de escribir.
+En SAMPLAST, abre «Sincronización automática (configuración avanzada)» → «Configuración inicial de Google Cloud». Pega los tres parámetros (ID OAuth web, clave de API restringida, número del proyecto). Pulsa Conectar con Google. Si aparece «Google preparado», pulsa Conectar otra vez. Autoriza el permiso por archivo y selecciona **Registro C.C-2027** en el selector de Google. La app comprueba el nombre y los encabezados antes de escribir.
 
 Conserva la misma configuración en los otros equipos y elige la misma hoja. El inicio de sesión debe hacerse con una cuenta autorizada que tenga permiso de edición. Al cerrar la pestaña o expirar el token, vuelve a conectar; no es una autorización permanente. Puedes revocar el acceso desde la seguridad de tu cuenta Google.
 
