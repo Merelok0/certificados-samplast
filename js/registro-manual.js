@@ -19,10 +19,10 @@
       const d=data||{};
       if(!d.cliente||!d.tipo||!d.lote||!d.fechaFab||!d.ancho||!d.espesor||!d.peso)return;
       const norm=x=>String(x||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z0-9]/g,"");
-      const short=window.SamplastClientes?.getAll?.().find(x=>norm(x.cliente)===norm(d.cliente))?.corto||"";
+      const short=(window.SamplastClientes?.getAll?.()||[]).find(x=>norm(x.cliente)===norm(d.cliente))?.corto||"";
       const now=stamp();
       const row=[now,d.cliente,short,d.tipo,d.color||"",meta.codigo||"",[d.ancho,d.espesor,d.peso].join("*"),d.ancho,d.espesor,d.peso,d.lote,d.fechaFab,d.fechaEmision||"",d.analista||"",meta.orientation||"portrait",meta.filename||"",meta.state||"PDF GENERADO","samplast-20261125"];
-      const k=JSON.stringify([now.slice(0,10),...row.slice(1)]);
+      const k=JSON.stringify([now.slice(0,10),...row.slice(1,-1).map(String)]);
       if(!seen.has(k)){
         seen.add(k);
         rows.push(["M-"+(crypto.randomUUID?.()||Date.now()+"-"+rows.length),...row]);
@@ -61,13 +61,13 @@
       url=new TextDecoder().decode(result);
       const parsed=new URL(url);
       if(parsed.origin!=="https://docs.google.com"||!parsed.pathname.startsWith("/spreadsheets/d/"))throw Error("Enlace inválido");
-      $("registro-protegido").hidden=false;$("registro-acceso").hidden=true;
+      $("registro-protegido").hidden=false;$("registro-acceso").hidden=true;$("registro-auto").hidden=false;
       status("Acceso habilitado en esta pestaña. Google controla los permisos de la hoja.");
     }catch(_){url="";status("Contraseña incorrecta o acceso no disponible.",true);}
     finally{busy=false;$("registro-desbloquear").disabled=false;}
   }
   function lock(){
-    url="";$("registro-protegido").hidden=true;$("registro-acceso").hidden=false;status("Acceso bloqueado.");
+    url="";$("registro-protegido").hidden=true;$("registro-acceso").hidden=false;$("registro-auto").hidden=true;status("Acceso bloqueado.");
   }
   function open(){
     if(url)window.open(url,"_blank","noopener,noreferrer");
