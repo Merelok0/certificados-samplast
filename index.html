@@ -15,7 +15,8 @@
   <script src="js/clientes-admin-v2.js?v=drive-history-20261124-1" defer></script>
   <script src="js/pdf-nombre-clientes.js?v=drive-history-20261124-1" defer></script>
   <script src="js/lote-masivo-v4.js?v=drive-history-20261124-1" data-samplast-lotes-v2="1" defer></script>
-  <script src="js/drive-sync.js?v=drive-history-20261124-1" defer></script>
+  <script src="js/drive-sync.js?v=registro-20261125-1" defer></script>
+  <script src="js/registro-manual.js?v=registro-20261125-1" defer></script>
 </head>
 <body>
 
@@ -109,7 +110,26 @@
           </div>
         </details>
         <details class="tool-panel">
-          <summary>Historial y base de datos en Drive</summary>
+          <summary>Registro de certificados y clientes</summary>
+          <div class="tool-panel-content">
+            <p class="tool-help">Acceso al registro de Calidad. Los datos de los certificados se preparan al generar el PDF.</p>
+            <div id="registro-acceso">
+              <div class="field"><label for="registro-clave">Contraseña de acceso</label><input id="registro-clave" type="password" autocomplete="off" placeholder="Ingrese contraseña"></div>
+              <div class="tool-actions"><button class="btn btn-primary" id="registro-desbloquear" type="button">Desbloquear registro</button></div>
+            </div>
+            <div id="registro-protegido" hidden>
+              <p class="field-note" id="registro-contador">0 certificados · 0 cambios de clientes</p>
+              <div class="tool-actions"><button class="btn btn-primary" id="registro-abrir" type="button">Abrir Registro C.C-2027</button></div>
+              <div class="tool-actions"><button class="btn btn-secondary" id="registro-copiar-cert" type="button">Copiar certificados</button><button class="btn btn-secondary" id="registro-copiar-cli" type="button">Copiar clientes</button></div>
+              <textarea id="registro-copia" hidden readonly aria-label="Datos para copiar a Google Sheets"></textarea>
+              <p class="field-note">Copia manual de la sesión actual. Pegue en la siguiente fila vacía de Historial o Clientes. No cierre la pestaña antes de guardar los datos.</p>
+              <div class="tool-actions"><button class="btn btn-secondary" id="registro-bloquear" type="button">Bloquear registro</button></div>
+            </div>
+            <div id="registro-estado" class="tool-status" role="status" aria-live="polite"></div>
+          </div>
+        </details>
+        <details class="tool-panel">
+          <summary>Sincronización automática (configuración avanzada)</summary>
           <div class="tool-panel-content">
             <p class="tool-help">Registra los datos de certificados y sincroniza clientes. No sube archivos PDF.</p>
             <p class="field-note">Pendientes locales: <strong id="drive-pending-count">0</strong></p>
