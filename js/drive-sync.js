@@ -7,7 +7,7 @@
   const CFG = "samplast_drive_config_v1", QUEUE = "samplast_drive_pending_v1", CLIENTQ = "samplast_drive_client_pending_v1";
   const CUSTOM = "samplast_clientes_personalizados_v1", HIDDEN = "samplast_clientes_ocultos_v1";
   const SCOPE = "https://www.googleapis.com/auth/drive.file";
-  const TITLE = "BASE DE DATOS SAMPLAST";
+  const TITLE = "Registro C.C-2027";
   const HEADERS_H = ["ID registro","Fecha de registro (Lima)","Razón social","Nombre corto PDF","Tipo","Color","Código técnico","Formato","Ancho (pulg.)","Espesor (µm)","Peso (kg)","Lote","Fecha fabricación","Fecha emisión","Analista","Orientación","Nombre PDF","Estado de salida","Versión"];
   const HEADERS_C = ["ID cliente","Razón social","Nombre corto PDF","Origen","Estado","Fecha actualización (Lima)"];
   const key = x => String(x || "").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z0-9]/g,"");
@@ -71,6 +71,12 @@
   const append = (a,rows) => rows.length?api(range(a)+":append?valueInputOption=RAW&insertDataOption=INSERT_ROWS","POST",{values:rows}):Promise.resolve();
   const update = (a,row) => api(range(a)+"?valueInputOption=RAW","PUT",{values:[row]});
   async function validate(){
+    // No se envían datos de Calidad a una hoja de acceso general.
+    const permissionResponse=await fetch("https://www.googleapis.com/drive/v3/files/"+encodeURIComponent(sheetId)+"?fields=shared,permissions(type,role)",{headers:{Authorization:"Bearer "+token}});
+    if(!permissionResponse.ok)throw Error("No se pudo verificar la privacidad de la hoja.");
+    const permissions=await permissionResponse.json();
+    if(permissions.shared!==false||!Array.isArray(permissions.permissions)||permissions.permissions.some(p=>p.type==="anyone"||p.type==="domain"))
+      throw Error("La hoja no es privada. En Google Sheets cambie Compartir → Acceso general → Restringido.");
     const m=await api("?fields=properties(title),sheets(properties(title))");
     if(m.properties?.title!==TITLE)throw Error("Seleccione exclusivamente "+TITLE+".");
     const [h,c]=await Promise.all([values("Historial!A1:S1"),values("Clientes!A1:F1")]);
